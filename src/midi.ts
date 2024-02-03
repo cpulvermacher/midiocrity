@@ -15,16 +15,20 @@ export function startMIDI(args: StartMidiArgs) {
 
         // Attach MIDI event "midimessage" to each input
         inputs.forEach(function (input) {
-            console.log('Attaching MIDI event "midimessage" to input', input);
+            console.log('Found MIDI input:', input.name, ", state: ", input.state);
             input.onmidimessage = onMIDIMessage;
         });
     }
 
-    function onMIDIMessage(message: { data: Uint8Array; }) {
-        // parse midi message and get key
-        const command = message.data[0];
-        const note = message.data[1];
-        const velocity = message.data[2];
+    function onMIDIMessage(message: Event) {
+        if (!("data" in message)) {
+            return;
+        }
+        // parse midi message
+        const data = message.data as Uint8Array;
+        const command = data[0];
+        const note = data[1];
+        const velocity = data[2];
 
         if (command === 144 && typeof note === 'number' && typeof velocity === 'number') {
             args.onKeyPressed(note, velocity);

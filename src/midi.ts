@@ -1,6 +1,7 @@
 type StartMidiArgs = {
     // key is a number from 0 to 127, with 60 being C4
-    onKey: (key: number, velocity: number) => void;
+    onKeyPressed: (key: number, velocity: number) => void;
+    onKeyReleased: (key: number) => void;
 };
 
 export function startMIDI(args: StartMidiArgs) {
@@ -21,14 +22,15 @@ export function startMIDI(args: StartMidiArgs) {
 
     function onMIDIMessage(message: { data: Uint8Array; }) {
         // parse midi message and get key
-        const key = message.data[1];
+        const command = message.data[0];
+        const note = message.data[1];
         const velocity = message.data[2];
 
-        if (typeof key !== 'number' || typeof velocity !== 'number') {
-            return;
+        if (command === 144 && typeof note === 'number' && typeof velocity === 'number') {
+            args.onKeyPressed(note, velocity);
+        } else if (command === 128 && typeof note === 'number') {
+            args.onKeyReleased(note);
         }
-        console.log('Key: ', key, velocity);
-        args.onKey(key, velocity);
     }
 
     navigator.requestMIDIAccess()

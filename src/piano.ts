@@ -7,22 +7,23 @@ const pianoHeight = 8;
 
 type Lights = {
     ambientLight: AmbientLight;
-    pointLights: PointLight[];
+    pointLights: Array<PointLight | null>;
 };
 
 export function Piano(numKeys = 88) {
     const scene = createScene();
     const camera = createCamera();
     const renderer = createRenderer();
+    const lights = createLights(scene, numKeys);
     const keys = createKeys(scene, numKeys);
-    const lights = createLights(scene);
 
     if (import.meta.env.MODE === 'development') {
         addDebugHelpers(scene, camera, renderer);
     }
 
     return {
-        lightUpKey: (keyIndex: number) => lightUpKey(scene, lights, keys, keyIndex),
+        keyPressed: (key: number, velocity: number) => lightUpKey(scene, lights, keys, key, velocity),
+        keyReleased: (key: number) => turnOffKey(scene, lights, keys, key),
         animate: () => animate(scene, camera, renderer, lights)
     };
 }
@@ -99,35 +100,56 @@ function createKeys(scene: Scene, numKeys: number) {
     return keys;
 }
 
-const createLights = (scene: Scene): Lights => {
+const createLights = (scene: Scene, numKeys: number): Lights => {
     const ambientLight = new AmbientLight(0x404040); // soft white light
     scene.add(ambientLight);
-    return { ambientLight, pointLights: [] };
+    return {
+        ambientLight,
+        pointLights: new Array(numKeys).fill(null)
+    };
 };
 
 const animateLights = (lights: Lights, time: number) => {
     const color = new Color(0xffffff);
     color.setHSL(Math.sin(time * 0.1), 0.5, 0.5);
     for (const light of lights.pointLights) {
-        light.color.lerpHSL(color, 0.1);
+        if (light) {
+            light.color.lerpHSL(color, 0.1);
+        }
     }
 };
 
-function lightUpKey(scene: Scene, lights: Lights, keys: Object3D[], keyIndex: number) {
+function lightUpKey(scene: Scene, lights: Lights, keys: Object3D[], keyIndex: number, velocity: number) {
     if (keyIndex < 0 || keyIndex >= keys.length) {
-        console.error('Invalid key index');
+        console.error('Invalid key index', keyIndex);
         return;
     }
 
-    const pointLight = new PointLight(0xff0000, 1);
+    const pointLight = new PointLight(0xff0000, Math.pow(100, velocity));
     pointLight.position.set(
         keys[keyIndex].position.x,
         keys[keyIndex].position.y - 2.5,
         keys[keyIndex].position.z + 0.1);
     scene.add(pointLight);
-    lights.pointLights.push(pointLight);
-
+    if (lights.pointLights[keyIndex] !== null) {
+        scene.remove(lights.pointLights[keyIndex] as PointLight);
+    }
+    lights.pointLights[keyIndex] = pointLight;
 }
+
+function turnOffKey(scene: Scene, lights: Lights, keys: Object3D[], keyIndex: number) {
+    if (keyIndex < 0 || keyIndex >= keys.length) {
+        console.error('Invalid key index', keyIndex);
+        return;
+    }
+
+    const light = lights.pointLights[keyIndex];
+    if (light) {
+        scene.remove(light);
+        lights.pointLights[keyIndex] = null;
+    }
+}
+
 
 function animate(scene: Scene, camera: Camera, renderer: WebGLRenderer, lights: Lights) {
     const time = Date.now() * 0.0005; // current time in seconds

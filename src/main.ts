@@ -20,5 +20,5 @@ startMIDI({
 // setInterval(() => {
 //   const key = Math.floor(Math.random() * numKeys);
 //   piano.keyPressed(key, 0.5);
-//   setTimeout(() => piano.keyReleased(key), 1000);
+//   setTimeout(() => piano.keyReleased(key), 10000);
 // }, 1000);

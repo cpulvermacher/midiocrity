@@ -1,9 +1,10 @@
-import { AmbientLight, BoxGeometry, Camera, Color, GridHelper, Mesh, MeshStandardMaterial, Object3D, PerspectiveCamera, PointLight, RectAreaLight, Scene, Vector3, WebGLRenderer } from 'three';
+import { AmbientLight, BoxGeometry, Camera, HSL, GridHelper, Mesh, MeshStandardMaterial, Object3D, PerspectiveCamera, PointLight, RectAreaLight, Scene, Vector3, WebGLRenderer, Color } from 'three';
 import { RectAreaLightHelper } from 'three/examples/jsm/Addons.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { RectAreaLightUniformsLib } from 'three/examples/jsm/lights/RectAreaLightUniformsLib.js';
 
 const pianoHeight = 8;
+const minIntensity = 0.05;
 
 type Lights = {
     ambientLight: AmbientLight;
@@ -110,11 +111,14 @@ const createLights = (scene: Scene, numKeys: number): Lights => {
 };
 
 const animateLights = (lights: Lights, time: number) => {
-    const color = new Color(0xffffff);
-    color.setHSL(Math.sin(time * 0.1), 0.5, 0.5);
+    const hue = Math.sin(time * 0.1);
+    const color = new Color();
+    const hsl = {} as HSL;
     for (const light of lights.pointLights) {
         if (light) {
+            color.setHSL(hue, 0.5, light.color.getHSL(hsl).l);
             light.color.lerpHSL(color, 0.1);
+            light.intensity = Math.max(light.intensity * 0.93, minIntensity);
         }
     }
 };
@@ -125,7 +129,7 @@ function lightUpKey(scene: Scene, lights: Lights, keys: Object3D[], keyIndex: nu
         return;
     }
 
-    const pointLight = new PointLight(0xff0000, Math.pow(100, velocity));
+    const pointLight = new PointLight(0xff0000, Math.pow(100, velocity) - 1 + minIntensity);
     pointLight.position.set(
         keys[keyIndex].position.x,
         keys[keyIndex].position.y - 2.5,

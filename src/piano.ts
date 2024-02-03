@@ -3,6 +3,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 const pianoHeight = 8;
 const minIntensity = 0.05;
+let animationRunning = false;
 
 type Lights = {
     ambientLight: AmbientLight;
@@ -20,10 +21,19 @@ export function Piano(numKeys = 88) {
         addDebugHelpers(scene, camera, renderer);
     }
 
+    const startAnimation = () => {
+        //only start animation if it's not active yet
+        if (!animationRunning) {
+            animate(scene, camera, renderer, lights);
+        }
+    };
     return {
-        keyPressed: (key: number, velocity: number) => lightUpKey(scene, lights, keys, key, velocity),
+        keyPressed: (key: number, velocity: number) => {
+            lightUpKey(scene, lights, keys, key, velocity);
+            startAnimation();
+        },
         keyReleased: (key: number) => turnOffKey(scene, lights, keys, key),
-        animate: () => animate(scene, camera, renderer, lights)
+        animate: startAnimation
     };
 }
 
@@ -90,7 +100,7 @@ function createKeys(scene: Scene, numKeys: number) {
 }
 
 const createLights = (scene: Scene, numKeys: number): Lights => {
-    const ambientLight = new AmbientLight(0x404040); // soft white light
+    const ambientLight = new AmbientLight(0x404040, 1); // soft white light
     scene.add(ambientLight);
     return {
         ambientLight,
@@ -102,13 +112,16 @@ const animateLights = (lights: Lights, time: number) => {
     const hue = Math.sin(time * 0.1);
     const color = new Color();
     const hsl = {} as HSL;
+    let dirty = false;
     for (const light of lights.pointLights) {
         if (light) {
             color.setHSL(hue, 0.5, light.color.getHSL(hsl).l);
             light.color.lerpHSL(color, 0.1);
             light.intensity = Math.max(light.intensity * 0.93, minIntensity);
+            dirty = true;
         }
     }
+    return dirty;
 };
 
 function lightUpKey(scene: Scene, lights: Lights, keys: Object3D[], keyIndex: number, velocity: number) {
@@ -145,8 +158,12 @@ function turnOffKey(scene: Scene, lights: Lights, keys: Object3D[], keyIndex: nu
 
 function animate(scene: Scene, camera: Camera, renderer: WebGLRenderer, lights: Lights) {
     const time = Date.now() * 0.0005; // current time in seconds
-    animateLights(lights, time);
-    requestAnimationFrame(() => animate(scene, camera, renderer, lights));
+    animationRunning = animateLights(lights, time);
+    if (animationRunning) {
+        requestAnimationFrame(() => animate(scene, camera, renderer, lights));
+    } else {
+        console.log("stopping animation");
+    }
     renderer.render(scene, camera);
 }
 
@@ -156,6 +173,9 @@ function addDebugHelpers(scene: Scene, camera: Camera, renderer: WebGLRenderer) 
     // scene.add(gridHelper);
 
     const orbitControls = new OrbitControls(camera, renderer.domElement);
+    orbitControls.addEventListener('change', () => {
+        renderer.render(scene, camera);
+    });
 
     return { gridHelper, orbitControls };
 }

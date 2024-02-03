@@ -54,12 +54,12 @@ export function Piano(numKeys = 88) {
 function createScene() {
     const scene = new Scene();
 
-    const geoFloor = new BoxGeometry(2000, 0.1, 2000);
-    const matStdFloor = new MeshStandardMaterial({ color: 0xbcbcbc, roughness: 0.1, metalness: 0.4 });
-    const mshStdFloor = new Mesh(geoFloor, matStdFloor);
+    const floorGeometry = new BoxGeometry(2000, 0.1, 2000);
+    const floorMaterial = new MeshStandardMaterial({ color: 0xbcbcbc, roughness: 0.2, metalness: 0.1 });
+    const floor = new Mesh(floorGeometry, floorMaterial);
 
-    mshStdFloor.position.y = -pianoHeight;
-    scene.add(mshStdFloor);
+    floor.position.y = -pianoHeight;
+    scene.add(floor);
 
     return scene;
 }

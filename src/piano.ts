@@ -1,7 +1,5 @@
-import { AmbientLight, BoxGeometry, Camera, HSL, GridHelper, Mesh, MeshStandardMaterial, Object3D, PerspectiveCamera, PointLight, RectAreaLight, Scene, Vector3, WebGLRenderer, Color } from 'three';
-import { RectAreaLightHelper } from 'three/examples/jsm/Addons.js';
+import { AmbientLight, BoxGeometry, Camera, Color, GridHelper, HSL, Mesh, MeshStandardMaterial, Object3D, PerspectiveCamera, PointLight, Scene, WebGLRenderer } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { RectAreaLightUniformsLib } from 'three/examples/jsm/lights/RectAreaLightUniformsLib.js';
 
 const pianoHeight = 8;
 const minIntensity = 0.05;
@@ -31,8 +29,6 @@ export function Piano(numKeys = 88) {
 
 function createScene() {
     const scene = new Scene();
-
-    RectAreaLightUniformsLib.init();
 
     const geoFloor = new BoxGeometry(2000, 0.1, 2000);
     const matStdFloor = new MeshStandardMaterial({ color: 0xbcbcbc, roughness: 0.1, metalness: 0.4 });
@@ -71,15 +67,7 @@ function createKey(scene: Scene, x: number, isBlack: boolean) {
     key.position.z = isBlack ? 0.5 : 0;
     scene.add(key);
 
-    const light = new RectAreaLight(isBlack ? 0xaaaaaa : 0xffffff, 0.1, keyWidth, keyHeight);
-    light.lookAt(new Vector3(0, 0, 1000));
-
-    light.position.copy(key.position);
-
-    const lightHelper = new RectAreaLightHelper(light);
-    light.add(lightHelper);
-    scene.add(light);
-    return light;
+    return key;
 }
 
 function createKeys(scene: Scene, numKeys: number) {

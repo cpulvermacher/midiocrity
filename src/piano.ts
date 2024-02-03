@@ -1,9 +1,12 @@
-import { AmbientLight, BoxGeometry, Camera, Color, GridHelper, HSL, Mesh, MeshStandardMaterial, Object3D, PerspectiveCamera, PointLight, Scene, WebGLRenderer } from 'three';
+import { AmbientLight, BoxGeometry, Camera, Clock, Color, GridHelper, HSL, Mesh, MeshStandardMaterial, Object3D, PerspectiveCamera, PointLight, Scene, Vector2, Vector3, WebGLRenderer } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 const pianoHeight = 8;
 const minIntensity = 0.05;
+
 let animationRunning = false;
+const clock = new Clock();
+let frameCount = 0;
 
 type Lights = {
     ambientLight: AmbientLight;
@@ -27,6 +30,15 @@ export function Piano(numKeys = 88) {
             animate(scene, camera, renderer, lights);
         }
     };
+
+    function onWindowResize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        startAnimation();
+    }
+    window.addEventListener('resize', onWindowResize);
+
     return {
         keyPressed: (key: number, velocity: number) => {
             lightUpKey(scene, lights, keys, key, velocity);
@@ -51,9 +63,8 @@ function createScene() {
 }
 
 function createCamera() {
-
-    const camera = new PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 1000);
-    camera.position.set(0, 0, 70);
+    const camera = new PerspectiveCamera(50, window.innerWidth / window.innerHeight);
+    camera.position.set(0, 0, 50);
 
     return camera;
 }
@@ -157,12 +168,39 @@ function turnOffKey(scene: Scene, lights: Lights, keys: Object3D[], keyIndex: nu
 }
 
 
-function animate(scene: Scene, camera: Camera, renderer: WebGLRenderer, lights: Lights, timestampMs: number = 0) {
-    animationRunning = animateLights(lights, timestampMs);
+function animate(scene: Scene, camera: PerspectiveCamera, renderer: WebGLRenderer, lights: Lights, timestampMs: number = 0) {
+    const lightsDirty = animateLights(lights, timestampMs);
+    const cameraDirty = animateCameraToFitScreen(camera);
+    animationRunning = lightsDirty || cameraDirty;
+
     if (animationRunning) {
         requestAnimationFrame((timestamp) => animate(scene, camera, renderer, lights, timestamp));
     }
     renderer.render(scene, camera);
+
+    frameCount++;
+    const delta = clock.getElapsedTime();
+    if (delta > 1) {
+        const fps = frameCount / delta;
+        console.log(`FPS: ${fps}`);
+
+        frameCount = 0;
+        clock.start();
+    }
+
+}
+
+function animateCameraToFitScreen(camera: PerspectiveCamera) {
+    const cameraPosition = new Vector3();
+    camera.getWorldPosition(cameraPosition);
+    const viewSize = new Vector2();
+    camera.getViewSize(cameraPosition.z, viewSize);
+    const desiredXViewSize = 54; // TODO numkeys / 12 * 7
+    if (Math.abs(viewSize.x - desiredXViewSize) > 0.2) {
+        camera.position.z -= Math.max(0.1, 0.1 * Math.abs((viewSize.x - desiredXViewSize))) * Math.sign(viewSize.x - desiredXViewSize);
+        return true;
+    }
+    return false;
 }
 
 function addDebugHelpers(scene: Scene, camera: Camera, renderer: WebGLRenderer) {

@@ -108,13 +108,14 @@ const createLights = (scene: Scene, numKeys: number): Lights => {
     };
 };
 
-const animateLights = (lights: Lights, time: number) => {
-    const hue = Math.sin(time * 0.1);
+const animateLights = (lights: Lights, timestampMs: number) => {
+    const hue = Math.sin(timestampMs / 20_000);
     const color = new Color();
     const hsl = {} as HSL;
     let dirty = false;
     for (const light of lights.pointLights) {
         if (light) {
+            //TODO intensity fade depends on FPS
             color.setHSL(hue, 0.5, light.color.getHSL(hsl).l);
             light.color.lerpHSL(color, 0.1);
             light.intensity = Math.max(light.intensity * 0.93, minIntensity);
@@ -156,13 +157,10 @@ function turnOffKey(scene: Scene, lights: Lights, keys: Object3D[], keyIndex: nu
 }
 
 
-function animate(scene: Scene, camera: Camera, renderer: WebGLRenderer, lights: Lights) {
-    const time = Date.now() * 0.0005; // current time in seconds
-    animationRunning = animateLights(lights, time);
+function animate(scene: Scene, camera: Camera, renderer: WebGLRenderer, lights: Lights, timestampMs: number = 0) {
+    animationRunning = animateLights(lights, timestampMs);
     if (animationRunning) {
-        requestAnimationFrame(() => animate(scene, camera, renderer, lights));
-    } else {
-        console.log("stopping animation");
+        requestAnimationFrame((timestamp) => animate(scene, camera, renderer, lights, timestamp));
     }
     renderer.render(scene, camera);
 }

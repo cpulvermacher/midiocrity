@@ -1,11 +1,14 @@
-import { AmbientLight, BoxGeometry, BufferGeometry, Camera, Color, Float32BufferAttribute, GridHelper, Mesh, MeshBasicMaterial, MeshStandardMaterial, Object3D, OrthographicCamera, PerspectiveCamera, PointLight, Points, PointsMaterial, RectAreaLight, Scene, SphereGeometry, Vector3, WebGLRenderer } from 'three';
+import { AmbientLight, BoxGeometry, Camera, Color, GridHelper, Mesh, MeshStandardMaterial, Object3D, PerspectiveCamera, PointLight, RectAreaLight, Scene, Vector3, WebGLRenderer } from 'three';
 import { RectAreaLightHelper } from 'three/examples/jsm/Addons.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { RectAreaLightUniformsLib } from 'three/examples/jsm/lights/RectAreaLightUniformsLib.js';
 
 const pianoHeight = 8;
 
-type Lights = { pointLights: PointLight[]; };
+type Lights = {
+    ambientLight: AmbientLight;
+    pointLights: PointLight[];
+};
 
 export function Piano(numKeys = 88) {
     const scene = createScene();
@@ -13,8 +16,6 @@ export function Piano(numKeys = 88) {
     const renderer = createRenderer();
     const keys = createKeys(scene, numKeys);
     const lights = createLights(scene);
-    const particleSystem = createParticleSystem(scene);
-
 
     if (import.meta.env.MODE === 'development') {
         addDebugHelpers(scene, camera, renderer);
@@ -98,42 +99,19 @@ function createKeys(scene: Scene, numKeys: number) {
     return keys;
 }
 
-const createLights = (): Lights => {
-    return { pointLights: [] };
+const createLights = (scene: Scene): Lights => {
+    const ambientLight = new AmbientLight(0x404040); // soft white light
+    scene.add(ambientLight);
+    return { ambientLight, pointLights: [] };
 };
 
 const animateLights = (lights: Lights, time: number) => {
     const color = new Color(0xffffff);
     color.setHSL(Math.sin(time * 0.1), 0.5, 0.5);
-    lights.pointLight.color.lerpHSL(color, 0.1);
-};
-
-
-const createParticleSystem = (scene: Scene) => {
-    const particles = new BufferGeometry();
-    const particleMaterial = new PointsMaterial({ color: 0xffff00, size: 0.1 });
-
-    const positions = [];
-    for (let i = 0; i < 100; i++) {
-        positions.push(0, 0, 0);
+    for (const light of lights.pointLights) {
+        light.color.lerpHSL(color, 0.1);
     }
-    particles.setAttribute('position', new Float32BufferAttribute(positions, 3));
-
-    const particleSystem = new Points(particles, particleMaterial);
-    scene.add(particleSystem);
-
-    return particleSystem;
 };
-
-const animateParticles = (particleSystem: Points, deltaTime: number) => {
-    const positions = particleSystem.geometry.attributes.position.array as number[];
-    for (let i = 0; i < positions.length; i += 3) {
-        positions[i] += (Math.random() - 0.5) * deltaTime;
-        positions[i + 1] += deltaTime;
-    }
-    particleSystem.geometry.attributes.position.needsUpdate = true;
-};
-
 
 function lightUpKey(scene: Scene, lights: Lights, keys: Object3D[], keyIndex: number) {
     if (keyIndex < 0 || keyIndex >= keys.length) {
@@ -153,8 +131,7 @@ function lightUpKey(scene: Scene, lights: Lights, keys: Object3D[], keyIndex: nu
 
 function animate(scene: Scene, camera: Camera, renderer: WebGLRenderer, lights: Lights) {
     const time = Date.now() * 0.0005; // current time in seconds
-    // animateLights(lights, time);
-    // animateParticles(particleSystem, time);
+    animateLights(lights, time);
     requestAnimationFrame(() => animate(scene, camera, renderer, lights));
     renderer.render(scene, camera);
 }

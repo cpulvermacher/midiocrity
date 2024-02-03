@@ -2,6 +2,8 @@ import { AmbientLight, BoxGeometry, Camera, Clock, Color, GridHelper, HSL, Mesh,
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 const pianoHeight = 8;
+const keyThicknessWhite = 0.5;
+const keyThicknessBlack = 0.2;
 const minIntensity = 0.05;
 
 let animationRunning = false;
@@ -80,12 +82,12 @@ function createKey(scene: Scene, x: number, isBlack: boolean) {
     const keyWidth = isBlack ? 0.4 : 0.9;
     const keyHeight = isBlack ? pianoHeight * 0.8 : pianoHeight;
 
-    const geometry = new BoxGeometry(keyWidth, keyHeight, 0.1);
+    const geometry = new BoxGeometry(keyWidth, keyHeight, isBlack ? keyThicknessBlack : keyThicknessWhite);
     const material = new MeshStandardMaterial({ color: isBlack ? 0xaaaaaa : 0xffffff });
     const key = new Mesh(geometry, material);
     key.position.x = isBlack ? x - 0.5 : x;
     key.position.y = - keyHeight / 2;
-    key.position.z = isBlack ? 0.5 : 0;
+    key.position.z = isBlack ? keyThicknessWhite / 2 + keyThicknessBlack / 2 : 0;
     scene.add(key);
 
     return key;
@@ -146,7 +148,7 @@ function lightUpKey(scene: Scene, lights: Lights, keys: Object3D[], keyIndex: nu
     pointLight.position.set(
         keys[keyIndex].position.x,
         keys[keyIndex].position.y - 2.5,
-        keys[keyIndex].position.z + 0.1);
+        keys[keyIndex].position.z + keyThicknessWhite);
     scene.add(pointLight);
     if (lights.pointLights[keyIndex] !== null) {
         scene.remove(lights.pointLights[keyIndex] as PointLight);

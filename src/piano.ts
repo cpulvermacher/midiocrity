@@ -1,9 +1,11 @@
-import { AmbientLight, BoxGeometry, BufferGeometry, Camera, Color, Float32BufferAttribute, GridHelper, Mesh, MeshBasicMaterial, MeshStandardMaterial, OrthographicCamera, PerspectiveCamera, PointLight, Points, PointsMaterial, RectAreaLight, Scene, Vector3, WebGLRenderer } from 'three';
+import { AmbientLight, BoxGeometry, BufferGeometry, Camera, Color, Float32BufferAttribute, GridHelper, Mesh, MeshBasicMaterial, MeshStandardMaterial, Object3D, OrthographicCamera, PerspectiveCamera, PointLight, Points, PointsMaterial, RectAreaLight, Scene, SphereGeometry, Vector3, WebGLRenderer } from 'three';
 import { RectAreaLightHelper } from 'three/examples/jsm/Addons.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { RectAreaLightUniformsLib } from 'three/examples/jsm/lights/RectAreaLightUniformsLib.js';
 
 const pianoHeight = 8;
+
+type Lights = { pointLights: PointLight[]; };
 
 export function Piano(numKeys = 88) {
     const scene = createScene();
@@ -19,8 +21,8 @@ export function Piano(numKeys = 88) {
     }
 
     return {
-        lightUpKey: (keyIndex: number) => lightUpKey(particleSystem, keys, keyIndex),
-        animate: () => animate(scene, camera, renderer, particleSystem)
+        lightUpKey: (keyIndex: number) => lightUpKey(scene, lights, keys, keyIndex),
+        animate: () => animate(scene, camera, renderer, lights)
     };
 }
 
@@ -30,7 +32,7 @@ function createScene() {
     RectAreaLightUniformsLib.init();
 
     const geoFloor = new BoxGeometry(2000, 0.1, 2000);
-    const matStdFloor = new MeshStandardMaterial({ color: 0xbcbcbc, roughness: 0.1, metalness: 0 });
+    const matStdFloor = new MeshStandardMaterial({ color: 0xbcbcbc, roughness: 0.1, metalness: 0.4 });
     const mshStdFloor = new Mesh(geoFloor, matStdFloor);
 
     mshStdFloor.position.y = -pianoHeight;
@@ -54,22 +56,27 @@ function createRenderer() {
     return renderer;
 }
 
-
 function createKey(scene: Scene, x: number, isBlack: boolean) {
     const keyWidth = isBlack ? 0.4 : 0.9;
     const keyHeight = isBlack ? pianoHeight * 0.8 : pianoHeight;
 
-    const key = new RectAreaLight(isBlack ? 0xaaaaaa : 0xffffff, 0.1, keyWidth, keyHeight);
-    key.lookAt(new Vector3(0, 0, 1000));
-
+    const geometry = new BoxGeometry(keyWidth, keyHeight, 0.1);
+    const material = new MeshStandardMaterial({ color: isBlack ? 0xaaaaaa : 0xffffff });
+    const key = new Mesh(geometry, material);
     key.position.x = isBlack ? x - 0.5 : x;
     key.position.y = - keyHeight / 2;
     key.position.z = isBlack ? 0.5 : 0;
-
-    const lightHelper = new RectAreaLightHelper(key);
-    key.add(lightHelper);
     scene.add(key);
-    return key;
+
+    const light = new RectAreaLight(isBlack ? 0xaaaaaa : 0xffffff, 0.1, keyWidth, keyHeight);
+    light.lookAt(new Vector3(0, 0, 1000));
+
+    light.position.copy(key.position);
+
+    const lightHelper = new RectAreaLightHelper(light);
+    light.add(lightHelper);
+    scene.add(light);
+    return light;
 }
 
 function createKeys(scene: Scene, numKeys: number) {
@@ -91,18 +98,11 @@ function createKeys(scene: Scene, numKeys: number) {
     return keys;
 }
 
-const createLights = (scene: Scene) => {
-    const ambientLight = new AmbientLight(0x404040); // soft white light
-    scene.add(ambientLight);
-
-    const pointLight = new PointLight(0xff0000, 1, 100);
-    pointLight.position.set(0, 0, 50);
-    scene.add(pointLight);
-
-    return { ambientLight, pointLight };
+const createLights = (): Lights => {
+    return { pointLights: [] };
 };
 
-const animateLights = (lights: { ambientLight: AmbientLight, pointLight: PointLight; }, time: number) => {
+const animateLights = (lights: Lights, time: number) => {
     const color = new Color(0xffffff);
     color.setHSL(Math.sin(time * 0.1), 0.5, 0.5);
     lights.pointLight.color.lerpHSL(color, 0.1);
@@ -135,36 +135,34 @@ const animateParticles = (particleSystem: Points, deltaTime: number) => {
 };
 
 
-function lightUpKey(particleSystem: Points, keys: Mesh[], keyIndex: number) {
+function lightUpKey(scene: Scene, lights: Lights, keys: Object3D[], keyIndex: number) {
     if (keyIndex < 0 || keyIndex >= keys.length) {
         console.error('Invalid key index');
         return;
     }
-    keys[keyIndex].material = new MeshBasicMaterial({ color: 0xff0000 });
 
+    const pointLight = new PointLight(0xff0000, 1);
+    pointLight.position.set(
+        keys[keyIndex].position.x,
+        keys[keyIndex].position.y - 2.5,
+        keys[keyIndex].position.z + 0.1);
+    scene.add(pointLight);
+    lights.pointLights.push(pointLight);
 
-    // Position the particle system at the key and reset the particles
-    particleSystem.position.copy(keys[keyIndex].position);
-    const positions = particleSystem.geometry.attributes.position.array as number[];
-    for (let i = 0; i < positions.length; i += 3) {
-        positions[i] = 0;
-        positions[i + 1] = 0;
-        positions[i + 2] = 0;
-    }
 }
 
-function animate(scene: Scene, camera: Camera, renderer: WebGLRenderer, particleSystem) {
+function animate(scene: Scene, camera: Camera, renderer: WebGLRenderer, lights: Lights) {
     const time = Date.now() * 0.0005; // current time in seconds
     // animateLights(lights, time);
-    animateParticles(particleSystem, time);
-    requestAnimationFrame(() => animate(scene, camera, renderer, particleSystem));
+    // animateParticles(particleSystem, time);
+    requestAnimationFrame(() => animate(scene, camera, renderer, lights));
     renderer.render(scene, camera);
 }
 
 function addDebugHelpers(scene: Scene, camera: Camera, renderer: WebGLRenderer) {
     const gridHelper = new GridHelper(100, 100);
-    scene.add(gridHelper);
     gridHelper.rotation.x = Math.PI / 2; // Rotate the gridHelper 90 degrees
+    // scene.add(gridHelper);
 
     const orbitControls = new OrbitControls(camera, renderer.domElement);
 

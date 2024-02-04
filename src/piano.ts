@@ -1,4 +1,4 @@
-import { AmbientLight, BoxGeometry, Camera, Clock, Color, GridHelper, HSL, Mesh, MeshStandardMaterial, Object3D, PerspectiveCamera, PointLight, Scene, Vector2, Vector3, WebGLRenderer } from 'three';
+import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 const pianoHeight = 8;
@@ -7,12 +7,12 @@ const keyThicknessBlack = 0.2;
 const minIntensity = 0.05;
 
 let animationRunning = false;
-const clock = new Clock();
+const clock = new THREE.Clock();
 let frameCount = 0;
 
 type Lights = {
-    ambientLight: AmbientLight;
-    pointLights: Array<PointLight | null>;
+    ambientLight: THREE.AmbientLight;
+    pointLights: Array<THREE.PointLight | null>;
 };
 
 export function Piano(numKeys = 88) {
@@ -52,11 +52,11 @@ export function Piano(numKeys = 88) {
 }
 
 function createScene() {
-    const scene = new Scene();
+    const scene = new THREE.Scene();
 
-    const floorGeometry = new BoxGeometry(2000, 0.1, 2000);
-    const floorMaterial = new MeshStandardMaterial({ color: 0xbcbcbc, roughness: 0.2, metalness: 0.1 });
-    const floor = new Mesh(floorGeometry, floorMaterial);
+    const floorGeometry = new THREE.BoxGeometry(2000, 0.1, 2000);
+    const floorMaterial = new THREE.MeshStandardMaterial({ color: 0xbcbcbc, roughness: 0.2, metalness: 0.1 });
+    const floor = new THREE.Mesh(floorGeometry, floorMaterial);
 
     floor.position.y = -pianoHeight;
     scene.add(floor);
@@ -65,26 +65,26 @@ function createScene() {
 }
 
 function createCamera() {
-    const camera = new PerspectiveCamera(50, window.innerWidth / window.innerHeight);
+    const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight);
     camera.position.set(0, 0, 50);
 
     return camera;
 }
 
 function createRenderer() {
-    const renderer = new WebGLRenderer();
+    const renderer = new THREE.WebGLRenderer();
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
     return renderer;
 }
 
-function createKey(scene: Scene, x: number, isBlack: boolean) {
+function createKey(scene: THREE.Scene, x: number, isBlack: boolean) {
     const keyWidth = isBlack ? 0.4 : 0.9;
     const keyHeight = isBlack ? pianoHeight * 0.8 : pianoHeight;
 
-    const geometry = new BoxGeometry(keyWidth, keyHeight, isBlack ? keyThicknessBlack : keyThicknessWhite);
-    const material = new MeshStandardMaterial({ color: isBlack ? 0xaaaaaa : 0xffffff });
-    const key = new Mesh(geometry, material);
+    const geometry = new THREE.BoxGeometry(keyWidth, keyHeight, isBlack ? keyThicknessBlack : keyThicknessWhite);
+    const material = new THREE.MeshStandardMaterial({ color: isBlack ? 0xaaaaaa : 0xffffff });
+    const key = new THREE.Mesh(geometry, material);
     key.position.x = isBlack ? x - 0.5 : x;
     key.position.y = - keyHeight / 2;
     key.position.z = isBlack ? keyThicknessWhite / 2 + keyThicknessBlack / 2 : 0;
@@ -93,7 +93,7 @@ function createKey(scene: Scene, x: number, isBlack: boolean) {
     return key;
 }
 
-function createKeys(scene: Scene, numKeys: number) {
+function createKeys(scene: THREE.Scene, numKeys: number) {
     const keys = [];
     const blackKeys = [1, 3, 6, 8, 10];
     //center the keyboard around x=0, and align to have white keys between gridlines
@@ -112,8 +112,8 @@ function createKeys(scene: Scene, numKeys: number) {
     return keys;
 }
 
-const createLights = (scene: Scene, numKeys: number): Lights => {
-    const ambientLight = new AmbientLight(0x404040, 1); // soft white light
+const createLights = (scene: THREE.Scene, numKeys: number): Lights => {
+    const ambientLight = new THREE.AmbientLight(0x404040, 1); // soft white light
     scene.add(ambientLight);
     return {
         ambientLight,
@@ -123,8 +123,8 @@ const createLights = (scene: Scene, numKeys: number): Lights => {
 
 const animateLights = (lights: Lights, timestampMs: number) => {
     const hue = Math.sin(timestampMs / 20_000);
-    const color = new Color();
-    const hsl = {} as HSL;
+    const color = new THREE.Color();
+    const hsl = {} as THREE.HSL;
     let dirty = false;
     for (const light of lights.pointLights) {
         if (light) {
@@ -138,25 +138,25 @@ const animateLights = (lights: Lights, timestampMs: number) => {
     return dirty;
 };
 
-function lightUpKey(scene: Scene, lights: Lights, keys: Object3D[], keyIndex: number, velocity: number) {
+function lightUpKey(scene: THREE.Scene, lights: Lights, keys: THREE.Object3D[], keyIndex: number, velocity: number) {
     if (keyIndex < 0 || keyIndex >= keys.length) {
         console.error('Invalid key index', keyIndex);
         return;
     }
 
-    const pointLight = new PointLight(0xff0000, Math.pow(100, velocity) - 1 + minIntensity);
+    const pointLight = new THREE.PointLight(0xff0000, Math.pow(100, velocity) - 1 + minIntensity);
     pointLight.position.set(
         keys[keyIndex].position.x,
         keys[keyIndex].position.y - 2.5,
         keys[keyIndex].position.z + keyThicknessWhite);
     scene.add(pointLight);
     if (lights.pointLights[keyIndex] !== null) {
-        scene.remove(lights.pointLights[keyIndex] as PointLight);
+        scene.remove(lights.pointLights[keyIndex] as THREE.PointLight);
     }
     lights.pointLights[keyIndex] = pointLight;
 }
 
-function turnOffKey(scene: Scene, lights: Lights, keys: Object3D[], keyIndex: number) {
+function turnOffKey(scene: THREE.Scene, lights: Lights, keys: THREE.Object3D[], keyIndex: number) {
     if (keyIndex < 0 || keyIndex >= keys.length) {
         console.error('Invalid key index', keyIndex);
         return;
@@ -170,7 +170,7 @@ function turnOffKey(scene: Scene, lights: Lights, keys: Object3D[], keyIndex: nu
 }
 
 
-function animate(scene: Scene, camera: PerspectiveCamera, renderer: WebGLRenderer, lights: Lights, timestampMs: number = 0) {
+function animate(scene: THREE.Scene, camera: THREE.PerspectiveCamera, renderer: THREE.WebGLRenderer, lights: Lights, timestampMs: number = 0) {
     const lightsDirty = animateLights(lights, timestampMs);
     const cameraDirty = animateCameraToFitScreen(camera);
     animationRunning = lightsDirty || cameraDirty;
@@ -192,10 +192,10 @@ function animate(scene: Scene, camera: PerspectiveCamera, renderer: WebGLRendere
 
 }
 
-function animateCameraToFitScreen(camera: PerspectiveCamera) {
-    const cameraPosition = new Vector3();
+function animateCameraToFitScreen(camera: THREE.PerspectiveCamera) {
+    const cameraPosition = new THREE.Vector3();
     camera.getWorldPosition(cameraPosition);
-    const viewSize = new Vector2();
+    const viewSize = new THREE.Vector2();
     camera.getViewSize(cameraPosition.z, viewSize);
     const desiredXViewSize = 54; // TODO numkeys / 12 * 7
     if (Math.abs(viewSize.x - desiredXViewSize) > 0.2) {
@@ -205,8 +205,8 @@ function animateCameraToFitScreen(camera: PerspectiveCamera) {
     return false;
 }
 
-function addDebugHelpers(scene: Scene, camera: Camera, renderer: WebGLRenderer) {
-    const gridHelper = new GridHelper(100, 100);
+function addDebugHelpers(scene: THREE.Scene, camera: THREE.Camera, renderer: THREE.WebGLRenderer) {
+    const gridHelper = new THREE.GridHelper(100, 100);
     gridHelper.rotation.x = Math.PI / 2; // Rotate the gridHelper 90 degrees
     // scene.add(gridHelper);
 

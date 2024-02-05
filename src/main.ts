@@ -22,8 +22,8 @@ window.addEventListener('keydown', function (event) {
             demoLoop = setInterval(
                 () => {
                     const key = Math.floor(Math.random() * numKeys);
-                    piano.keyPressed(key, 0.5);
-                    setTimeout(() => piano.keyReleased(key), 3000);
+                    piano.keyPressed(21 + key, 0.5);
+                    setTimeout(() => piano.keyReleased(21 + key), 3000);
                 }, 500);
         }
     }

@@ -20,12 +20,25 @@ type KeyFlow = {
     mesh: THREE.Mesh;
 };
 
-export function Piano(numKeys = 88) {
+type Config = {
+
+    numKeys: number;
+    lowestMidiNote: number;
+    keyOffset: number;
+};
+
+export function createPiano(numKeys = 88) {
+    const config: Config = {
+        numKeys: numKeys,
+        lowestMidiNote: getLowestMidiNote(numKeys), // needed for translating MIDI note range of e.g. 21 - 108 for 88-key piano to 0 based index
+        keyOffset: getKeyOffset(numKeys),
+    };
+
     const scene = createScene();
     const camera = createCamera();
     const renderer = createRenderer();
-    const lights = createLights(scene, numKeys);
-    const keys = createKeys(scene, numKeys);
+    const lights = createLights(scene, config);
+    const keys = createKeys(scene, config);
     const keyFlows: KeyFlow[] = [];
 
     if (import.meta.env.MODE === 'development') {
@@ -48,14 +61,38 @@ export function Piano(numKeys = 88) {
     window.addEventListener('resize', onWindowResize);
 
     return {
-        keyPressed: (key: number, velocity: number) => {
-            lightUpKey(scene, lights, keyFlows, keys, key, velocity);
+        keyPressed: (note: number, velocity: number) => {
+            lightUpKey(scene, lights, keyFlows, keys, (note - config.lowestMidiNote), velocity);
             startAnimation();
         },
-        keyReleased: (key: number) => turnOffKey(scene, lights, keys, key),
+        keyReleased: (note: number) => turnOffKey(scene, lights, keys, (note - config.lowestMidiNote)),
         animate: startAnimation
     };
 }
+
+function getLowestMidiNote(numKeys: number): number {
+    if (numKeys === 49 || numKeys === 61) {
+        return 36; // C2
+    } else if (numKeys === 76) {
+        return 28; // E1
+    } else if (numKeys === 88) {
+        return 21; // A0
+    } else {
+        console.error("unsupported keyboard size");
+        return 0;
+    }
+}
+
+function getKeyOffset(numKeys: number): number {
+    if (numKeys === 76) {
+        return 4; // E1
+    } else if (numKeys === 88) {
+        return 9; // A0
+    }
+    //for 49, 61 keys
+    return 0;
+}
+
 
 function createScene() {
     const scene = new THREE.Scene();
@@ -100,14 +137,14 @@ function createKey(scene: THREE.Scene, x: number, isBlack: boolean) {
     return key;
 }
 
-function createKeys(scene: THREE.Scene, numKeys: number) {
+function createKeys(scene: THREE.Scene, config: Config) {
     const keys = [];
     const blackKeys = [1, 3, 6, 8, 10];
     //center the keyboard around x=0, and align to have white keys between gridlines
-    let x = -Math.floor(numKeys / 12) * 7 / 2;
+    let x = -Math.floor(config.numKeys / 12) * 7 / 2;
 
-    for (let i = 0; i < numKeys; i++) {
-        const isBlack = blackKeys.includes(i % 12);
+    for (let i = 0; i < config.numKeys; i++) {
+        const isBlack = blackKeys.includes((i + config.keyOffset) % 12);
         const key = createKey(scene, x, isBlack);
         keys.push(key);
 
@@ -119,12 +156,12 @@ function createKeys(scene: THREE.Scene, numKeys: number) {
     return keys;
 }
 
-const createLights = (scene: THREE.Scene, numKeys: number): Lights => {
+const createLights = (scene: THREE.Scene, config: Config): Lights => {
     const ambientLight = new THREE.AmbientLight(0x404040, 1); // soft white light
     scene.add(ambientLight);
     return {
         ambientLight,
-        pointLights: new Array(numKeys).fill(null)
+        pointLights: new Array(config.numKeys).fill(null)
     };
 };
 

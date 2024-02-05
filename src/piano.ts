@@ -21,10 +21,23 @@ type KeyFlow = {
 };
 
 type Config = {
-
     numKeys: number;
     lowestMidiNote: number;
     keyOffset: number;
+};
+
+type Piano = {
+    config: Config;
+
+    //main three.js objects
+    scene: THREE.Scene;
+    camera: THREE.PerspectiveCamera;
+    renderer: THREE.WebGLRenderer;
+
+    //things that make up the scene
+    lights: Lights;
+    keys: THREE.Mesh[];
+    keyFlows: KeyFlow[];
 };
 
 export function createPiano(numKeys = 88) {
@@ -37,18 +50,26 @@ export function createPiano(numKeys = 88) {
     const scene = createScene();
     const camera = createCamera();
     const renderer = createRenderer();
-    const lights = createLights(scene, config);
-    const keys = createKeys(scene, config);
-    const keyFlows: KeyFlow[] = [];
+    const piano = {
+        config,
+
+        scene,
+        camera,
+        renderer,
+
+        lights: createLights(scene, config),
+        keys: createKeys(scene, config),
+        keyFlows: [],
+    };
 
     if (import.meta.env.MODE === 'development') {
-        addDebugHelpers(scene, camera, renderer);
+        addDebugHelpers(piano);
     }
 
     const startAnimation = () => {
         //only start animation if it's not active yet
         if (!animationRunning) {
-            animate(scene, camera, renderer, lights, keyFlows);
+            animate(piano);
         }
     };
 
@@ -62,10 +83,10 @@ export function createPiano(numKeys = 88) {
 
     return {
         keyPressed: (note: number, velocity: number) => {
-            lightUpKey(scene, lights, keyFlows, keys, (note - config.lowestMidiNote), velocity);
+            lightUpKey(piano, (note - config.lowestMidiNote), velocity);
             startAnimation();
         },
-        keyReleased: (note: number) => turnOffKey(scene, lights, keys, (note - config.lowestMidiNote)),
+        keyReleased: (note: number) => turnOffKey(piano, (note - config.lowestMidiNote)),
         animate: startAnimation
     };
 }
@@ -92,7 +113,6 @@ function getKeyOffset(numKeys: number): number {
     //for 49, 61 keys
     return 0;
 }
-
 
 function createScene() {
     const scene = new THREE.Scene();
@@ -218,60 +238,60 @@ function animateKeyFlow(scene: THREE.Scene, keyFlows: KeyFlow[], timestampMs: nu
 }
 
 
-function lightUpKey(scene: THREE.Scene, lights: Lights, keyFlows: KeyFlow[], keys: THREE.Object3D[], keyIndex: number, velocity: number) {
-    if (keyIndex < 0 || keyIndex >= keys.length) {
+function lightUpKey(piano: Piano, keyIndex: number, velocity: number) {
+    if (keyIndex < 0 || keyIndex >= piano.config.numKeys) {
         console.error('Invalid key index', keyIndex);
         return;
     }
 
     const pointLight = new THREE.PointLight(0xff0000, Math.pow(100, velocity) - 1 + minIntensity);
     pointLight.position.set(
-        keys[keyIndex].position.x,
-        keys[keyIndex].position.y - 2.5,
-        keys[keyIndex].position.z + keyThicknessWhite);
-    scene.add(pointLight);
-    if (lights.pointLights[keyIndex] !== null) {
-        scene.remove(lights.pointLights[keyIndex] as THREE.PointLight);
+        piano.keys[keyIndex].position.x,
+        piano.keys[keyIndex].position.y - 2.5,
+        piano.keys[keyIndex].position.z + keyThicknessWhite);
+    piano.scene.add(pointLight);
+    if (piano.lights.pointLights[keyIndex] !== null) {
+        piano.scene.remove(piano.lights.pointLights[keyIndex] as THREE.PointLight);
     }
-    lights.pointLights[keyIndex] = pointLight;
+    piano.lights.pointLights[keyIndex] = pointLight;
 
     //TODO single mesh with emittance as texture?
-    const boundingBox = new THREE.Box3().setFromObject(keys[keyIndex]);
+    const boundingBox = new THREE.Box3().setFromObject(piano.keys[keyIndex]);
     const size = new THREE.Vector3();
     const flowGeometry = new THREE.BoxGeometry(boundingBox.getSize(size).x, 1, 0.1);
     //TODO adjust size based on length
     const flowMaterial = new THREE.MeshLambertMaterial({ color: 0xffffff, emissive: 0xffffff });
     const flowMesh = new THREE.Mesh(flowGeometry, flowMaterial);
-    flowMesh.position.set(keys[keyIndex].position.x, 0, -0.1);
+    flowMesh.position.set(piano.keys[keyIndex].position.x, 0, -0.1);
 
-    scene.add(flowMesh);
-    keyFlows.push({ timestamp: 0, mesh: flowMesh });
+    piano.scene.add(flowMesh);
+    piano.keyFlows.push({ timestamp: 0, mesh: flowMesh });
 }
 
-function turnOffKey(scene: THREE.Scene, lights: Lights, keys: THREE.Object3D[], keyIndex: number) {
-    if (keyIndex < 0 || keyIndex >= keys.length) {
+function turnOffKey(piano: Piano, keyIndex: number) {
+    if (keyIndex < 0 || keyIndex >= piano.config.numKeys) {
         console.error('Invalid key index', keyIndex);
         return;
     }
 
-    const light = lights.pointLights[keyIndex];
+    const light = piano.lights.pointLights[keyIndex];
     if (light) {
-        scene.remove(light);
-        lights.pointLights[keyIndex] = null;
+        piano.scene.remove(light);
+        piano.lights.pointLights[keyIndex] = null;
     }
 }
 
 
-function animate(scene: THREE.Scene, camera: THREE.PerspectiveCamera, renderer: THREE.WebGLRenderer, lights: Lights, keyFlows: KeyFlow[], timestampMs: number = 0) {
-    const lightsDirty = animateLights(lights, timestampMs);
-    const keyFlowDirty = animateKeyFlow(scene, keyFlows, timestampMs);
-    const cameraDirty = animateCameraToFitScreen(camera);
+function animate(piano: Piano, timestampMs: number = 0) {
+    const lightsDirty = animateLights(piano.lights, timestampMs);
+    const keyFlowDirty = animateKeyFlow(piano.scene, piano.keyFlows, timestampMs);
+    const cameraDirty = animateCameraToFitScreen(piano);
     animationRunning = lightsDirty || keyFlowDirty || cameraDirty;
 
     if (animationRunning) {
-        requestAnimationFrame((timestamp) => animate(scene, camera, renderer, lights, keyFlows, timestamp));
+        requestAnimationFrame((timestamp) => animate(piano, timestamp));
     }
-    renderer.render(scene, camera);
+    piano.renderer.render(piano.scene, piano.camera);
 
     frameCount++;
     const delta = clock.getElapsedTime();
@@ -282,30 +302,29 @@ function animate(scene: THREE.Scene, camera: THREE.PerspectiveCamera, renderer: 
         frameCount = 0;
         clock.start();
     }
-
 }
 
-function animateCameraToFitScreen(camera: THREE.PerspectiveCamera) {
+function animateCameraToFitScreen(piano: Piano) {
     const cameraPosition = new THREE.Vector3();
-    camera.getWorldPosition(cameraPosition);
+    piano.camera.getWorldPosition(cameraPosition);
     const viewSize = new THREE.Vector2();
-    camera.getViewSize(cameraPosition.z, viewSize);
-    const desiredXViewSize = 54; // TODO numkeys / 12 * 7
+    piano.camera.getViewSize(cameraPosition.z, viewSize);
+    const desiredXViewSize = piano.config.numKeys / 12 * 7;
     if (Math.abs(viewSize.x - desiredXViewSize) > 0.2) {
-        camera.position.z -= Math.max(0.1, 0.1 * Math.abs((viewSize.x - desiredXViewSize))) * Math.sign(viewSize.x - desiredXViewSize);
+        piano.camera.position.z -= Math.max(0.1, 0.1 * Math.abs((viewSize.x - desiredXViewSize))) * Math.sign(viewSize.x - desiredXViewSize);
         return true;
     }
     return false;
 }
 
-function addDebugHelpers(scene: THREE.Scene, camera: THREE.Camera, renderer: THREE.WebGLRenderer) {
+function addDebugHelpers(piano: Piano) {
     const gridHelper = new THREE.GridHelper(100, 100);
     gridHelper.rotation.x = Math.PI / 2; // Rotate the gridHelper 90 degrees
     // scene.add(gridHelper);
 
-    const orbitControls = new OrbitControls(camera, renderer.domElement);
+    const orbitControls = new OrbitControls(piano.camera, piano.renderer.domElement);
     orbitControls.addEventListener('change', () => {
-        renderer.render(scene, camera);
+        piano.renderer.render(piano.scene, piano.camera);
     });
 
     return { gridHelper, orbitControls };

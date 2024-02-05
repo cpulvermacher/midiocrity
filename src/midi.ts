@@ -18,6 +18,20 @@ export function startMIDI(args: StartMidiArgs) {
             console.log('Found MIDI input:', input.name, ", state: ", input.state);
             input.onmidimessage = onMIDIMessage;
         });
+
+        midiAccess.onstatechange = function (event: Event) {
+            const midiEvent = event as MIDIConnectionEvent;
+            if (midiEvent.port.type !== 'input') {
+                return;
+            }
+            const port = midiEvent.port as MIDIInput;
+            console.log('MIDI state change:', port.name, ", state: ", port.state);
+            if (port.state === 'connected') {
+                port.onmidimessage = onMIDIMessage;
+            } else {
+                port.onmidimessage = null;
+            }
+        };
     }
 
     function onMIDIMessage(message: Event) {

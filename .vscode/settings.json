@@ -1,4 +1,6 @@
 {
+    "editor.detectIndentation": false,
+    "editor.tabSize": 4,
     "typescript.format.semicolons": "insert",
     "editor.codeActionsOnSave": {
         "source.organizeImports": "always"

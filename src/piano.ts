@@ -122,16 +122,23 @@ const createLights = (scene: THREE.Scene, numKeys: number): Lights => {
 };
 
 const animateLights = (lights: Lights, timestampMs: number) => {
-    const hue = Math.sin(timestampMs / 20_000);
+    const currentHue = Math.sin(timestampMs / 20000);
     const color = new THREE.Color();
     const hsl = {} as THREE.HSL;
     let dirty = false;
     for (const light of lights.pointLights) {
         if (light) {
             //TODO intensity fade depends on FPS
-            color.setHSL(hue, 0.5, light.color.getHSL(hsl).l);
-            light.color.lerpHSL(color, 0.1);
-            light.intensity = Math.max(light.intensity * 0.93, minIntensity);
+            light.color.getHSL(hsl);
+            if (hsl.h === 0) {
+                //set hue based on current timestamp
+                light.color.setHSL(currentHue, hsl.s, hsl.l);
+            } else {
+                // fade out
+                color.setHSL(hsl.h, 0.5, hsl.l);
+                light.color.lerpHSL(color, 0.1);
+                light.intensity = Math.max(light.intensity * 0.93, minIntensity);
+            }
             dirty = true;
         }
     }

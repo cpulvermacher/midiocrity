@@ -15,12 +15,18 @@ type Lights = {
     pointLights: Array<THREE.PointLight | null>;
 };
 
+type KeyFlow = {
+    timestamp: number;
+    mesh: THREE.Mesh;
+};
+
 export function Piano(numKeys = 88) {
     const scene = createScene();
     const camera = createCamera();
     const renderer = createRenderer();
     const lights = createLights(scene, numKeys);
     const keys = createKeys(scene, numKeys);
+    const keyFlows: KeyFlow[] = [];
 
     if (import.meta.env.MODE === 'development') {
         addDebugHelpers(scene, camera, renderer);
@@ -29,7 +35,7 @@ export function Piano(numKeys = 88) {
     const startAnimation = () => {
         //only start animation if it's not active yet
         if (!animationRunning) {
-            animate(scene, camera, renderer, lights);
+            animate(scene, camera, renderer, lights, keyFlows);
         }
     };
 
@@ -43,7 +49,7 @@ export function Piano(numKeys = 88) {
 
     return {
         keyPressed: (key: number, velocity: number) => {
-            lightUpKey(scene, lights, keys, key, velocity);
+            lightUpKey(scene, lights, keyFlows, keys, key, velocity);
             startAnimation();
         },
         keyReleased: (key: number) => turnOffKey(scene, lights, keys, key),
@@ -82,6 +88,7 @@ function createKey(scene: THREE.Scene, x: number, isBlack: boolean) {
     const keyWidth = isBlack ? 0.4 : 0.9;
     const keyHeight = isBlack ? pianoHeight * 0.8 : pianoHeight;
 
+    //TODO combine into single mesh
     const geometry = new THREE.BoxGeometry(keyWidth, keyHeight, isBlack ? keyThicknessBlack : keyThicknessWhite);
     const material = new THREE.MeshStandardMaterial({ color: isBlack ? 0xaaaaaa : 0xffffff });
     const key = new THREE.Mesh(geometry, material);
@@ -122,7 +129,7 @@ const createLights = (scene: THREE.Scene, numKeys: number): Lights => {
 };
 
 const animateLights = (lights: Lights, timestampMs: number) => {
-    const currentHue = Math.sin(timestampMs / 20000);
+    const currentHue = getCurrentHue(timestampMs);
     const color = new THREE.Color();
     const hsl = {} as THREE.HSL;
     let dirty = false;
@@ -145,7 +152,36 @@ const animateLights = (lights: Lights, timestampMs: number) => {
     return dirty;
 };
 
-function lightUpKey(scene: THREE.Scene, lights: Lights, keys: THREE.Object3D[], keyIndex: number, velocity: number) {
+function getCurrentHue(timestampMs: number) {
+    return Math.sin(timestampMs / 20000);
+}
+
+function animateKeyFlow(scene: THREE.Scene, keyFlows: KeyFlow[], timestampMs: number) {
+    const yShiftPerMs = 1 / 1_000;
+    const yOffset = -1;
+    const yThresholdForRemoval = 30;
+
+    const dirty = keyFlows.length !== 0;
+    for (let i = keyFlows.length - 1; i >= 0; i--) {
+        const flow = keyFlows[i];
+
+        if (flow.timestamp === 0) {
+            flow.timestamp = timestampMs;
+            (flow.mesh.material as THREE.MeshLambertMaterial).emissive.setHSL(getCurrentHue(timestampMs), 1, 0.5);
+        }
+        flow.mesh.position.y = yOffset + (timestampMs - flow.timestamp) * yShiftPerMs;
+
+        if (flow.mesh.position.y > yThresholdForRemoval) {
+            scene.remove(flow.mesh);
+            keyFlows.splice(i, 1);
+        }
+    }
+
+    return dirty;
+}
+
+
+function lightUpKey(scene: THREE.Scene, lights: Lights, keyFlows: KeyFlow[], keys: THREE.Object3D[], keyIndex: number, velocity: number) {
     if (keyIndex < 0 || keyIndex >= keys.length) {
         console.error('Invalid key index', keyIndex);
         return;
@@ -161,6 +197,18 @@ function lightUpKey(scene: THREE.Scene, lights: Lights, keys: THREE.Object3D[], 
         scene.remove(lights.pointLights[keyIndex] as THREE.PointLight);
     }
     lights.pointLights[keyIndex] = pointLight;
+
+    //TODO single mesh with emittance as texture?
+    const boundingBox = new THREE.Box3().setFromObject(keys[keyIndex]);
+    const size = new THREE.Vector3();
+    const flowGeometry = new THREE.BoxGeometry(boundingBox.getSize(size).x, 1, 0.1);
+    //TODO adjust size based on length
+    const flowMaterial = new THREE.MeshLambertMaterial({ color: 0xffffff, emissive: 0xffffff });
+    const flowMesh = new THREE.Mesh(flowGeometry, flowMaterial);
+    flowMesh.position.set(keys[keyIndex].position.x, 0, -0.1);
+
+    scene.add(flowMesh);
+    keyFlows.push({ timestamp: 0, mesh: flowMesh });
 }
 
 function turnOffKey(scene: THREE.Scene, lights: Lights, keys: THREE.Object3D[], keyIndex: number) {
@@ -177,13 +225,14 @@ function turnOffKey(scene: THREE.Scene, lights: Lights, keys: THREE.Object3D[], 
 }
 
 
-function animate(scene: THREE.Scene, camera: THREE.PerspectiveCamera, renderer: THREE.WebGLRenderer, lights: Lights, timestampMs: number = 0) {
+function animate(scene: THREE.Scene, camera: THREE.PerspectiveCamera, renderer: THREE.WebGLRenderer, lights: Lights, keyFlows: KeyFlow[], timestampMs: number = 0) {
     const lightsDirty = animateLights(lights, timestampMs);
+    const keyFlowDirty = animateKeyFlow(scene, keyFlows, timestampMs);
     const cameraDirty = animateCameraToFitScreen(camera);
-    animationRunning = lightsDirty || cameraDirty;
+    animationRunning = lightsDirty || keyFlowDirty || cameraDirty;
 
     if (animationRunning) {
-        requestAnimationFrame((timestamp) => animate(scene, camera, renderer, lights, timestamp));
+        requestAnimationFrame((timestamp) => animate(scene, camera, renderer, lights, keyFlows, timestamp));
     }
     renderer.render(scene, camera);
 

@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 const pianoHeight = 8;
+const keyDistance = 1;
 const minIntensity = 0.05;
 const keyFlowYOffset = 0;
 const initialKeyFlowHeight = 0.1;
@@ -179,7 +180,7 @@ function createKey(scene: THREE.Scene, x: number, isBlack: boolean): Key {
 
     //TODO combine into single mesh
     const mesh = new THREE.Mesh(isBlack ? keyGeometryBlack : keyGeometryWhite, isBlack ? keyMaterialBlack : keyMaterialWhite);
-    mesh.position.x = isBlack ? x - 0.5 : x;
+    mesh.position.x = isBlack ? x - keyDistance / 2 : x;
     mesh.position.y = - keyConfig.height / 2;
     mesh.position.z = keyConfig.z;
     scene.add(mesh);
@@ -187,7 +188,7 @@ function createKey(scene: THREE.Scene, x: number, isBlack: boolean): Key {
     return {
         isBlack,
         width: keyConfig.width,
-        x,
+        x: mesh.position.x,
         mesh,
         pressedTimestamp: null,
         light: null,
@@ -199,7 +200,7 @@ function createKeys(scene: THREE.Scene, config: Config) {
     const keys = [];
     const blackKeys = [1, 3, 6, 8, 10];
     //center the keyboard around x=0, and align to have white keys between gridlines
-    let x = -Math.floor(config.numKeys / 12) * 7 / 2;
+    let x = -Math.floor(config.numKeys / 12) * 7 / 2 * keyDistance;
 
     for (let i = 0; i < config.numKeys; i++) {
         const isBlack = blackKeys.includes((i + config.keyOffset) % 12);
@@ -207,7 +208,7 @@ function createKeys(scene: THREE.Scene, config: Config) {
         keys.push(key);
 
         if (!isBlack) {
-            x += 1;
+            x += keyDistance;
         }
     }
 
@@ -312,7 +313,6 @@ function keyPressed(piano: Piano, keyIndex: number, velocity: number) {
     const flowMaterial = new THREE.MeshLambertMaterial({ emissive: color });
     const flowMesh = new THREE.Mesh(flowGeometry, flowMaterial);
     flowMesh.position.set(key.x, keyFlowYOffset, -0.5);
-    //TODO x wrong for black keys?
 
     piano.scene.add(flowMesh);
     const keyFlow = { active: true, timestamp: pressedTimestamp, mesh: flowMesh };
@@ -367,7 +367,7 @@ function animateCameraToFitScreen(piano: Piano) {
     piano.camera.getWorldPosition(cameraPosition);
     const viewSize = new THREE.Vector2();
     piano.camera.getViewSize(cameraPosition.z, viewSize);
-    const desiredXViewSize = piano.config.numKeys / 12 * 7;
+    const desiredXViewSize = piano.config.numKeys / 12 * 7 * keyDistance;
     if (Math.abs(viewSize.x - desiredXViewSize) > 0.2) {
         piano.camera.position.z -= Math.max(0.1, 0.1 * Math.abs((viewSize.x - desiredXViewSize))) * Math.sign(viewSize.x - desiredXViewSize);
         return true;

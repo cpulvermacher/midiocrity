@@ -9,8 +9,6 @@ const minIntensity = 0.05;
 const keyFlowYOffset = 0;
 const initialKeyFlowSize = 0.1;
 
-let animationRunning = false; //TODO move into Piano
-
 type Key = {
     isBlack: boolean;
     width: number;
@@ -39,6 +37,7 @@ type Config = {
 
 type Piano = {
     config: Config;
+    animationRunning: boolean;
 
     //main three.js objects
     scene: THREE.Scene;
@@ -64,8 +63,9 @@ export function createPiano(numKeys = 88) {
     const scene = createScene();
     const camera = createCamera();
     const renderer = createRenderer();
-    const piano = {
+    const piano: Piano = {
         config,
+        animationRunning: false,
 
         scene,
         camera,
@@ -83,7 +83,7 @@ export function createPiano(numKeys = 88) {
 
     const startAnimation = () => {
         //only start animation if it's not active yet
-        if (!animationRunning) {
+        if (!piano.animationRunning) {
             animate(piano);
         }
     };
@@ -335,12 +335,12 @@ function animate(piano: Piano, timestampMs: number = 0) {
     const lightsDirty = animateLights(piano.keys, timestampMs);
     const keyFlowDirty = animateKeyFlow(piano.scene, piano.keyFlows, timestampMs);
     const cameraDirty = animateCameraToFitScreen(piano);
-    animationRunning = lightsDirty || keyFlowDirty || cameraDirty;
+    piano.animationRunning = lightsDirty || keyFlowDirty || cameraDirty;
 
     piano.renderer.render(piano.scene, piano.camera);
     piano.stats?.end();
 
-    if (animationRunning) {
+    if (piano.animationRunning) {
         requestAnimationFrame((timestamp) => animate(piano, timestamp));
     }
 }

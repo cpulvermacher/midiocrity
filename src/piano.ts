@@ -1,3 +1,4 @@
+import Stats from 'stats.js';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
@@ -9,8 +10,6 @@ const keyFlowYOffset = 0;
 const initialKeyFlowSize = 0.1;
 
 let animationRunning = false; //TODO move into Piano
-const clock = new THREE.Clock();
-let frameCount = 0;
 
 type Key = {
     isBlack: boolean;
@@ -50,6 +49,9 @@ type Piano = {
     lights: Lights;
     keys: Key[];
     keyFlows: KeyFlow[];
+
+    //development helpers
+    stats: Stats | null;
 };
 
 export function createPiano(numKeys = 88) {
@@ -72,6 +74,7 @@ export function createPiano(numKeys = 88) {
         lights: createLights(scene),
         keys: createKeys(scene, config),
         keyFlows: [],
+        stats: null
     };
 
     if (import.meta.env.MODE === 'development') {
@@ -328,24 +331,17 @@ function keyReleased(piano: Piano, keyIndex: number) {
 
 
 function animate(piano: Piano, timestampMs: number = 0) {
+    piano.stats?.begin();
     const lightsDirty = animateLights(piano.keys, timestampMs);
     const keyFlowDirty = animateKeyFlow(piano.scene, piano.keyFlows, timestampMs);
     const cameraDirty = animateCameraToFitScreen(piano);
     animationRunning = lightsDirty || keyFlowDirty || cameraDirty;
 
+    piano.renderer.render(piano.scene, piano.camera);
+    piano.stats?.end();
+
     if (animationRunning) {
         requestAnimationFrame((timestamp) => animate(piano, timestamp));
-    }
-    piano.renderer.render(piano.scene, piano.camera);
-
-    frameCount++;
-    const delta = clock.getElapsedTime();
-    if (delta > 1) {
-        const fps = frameCount / delta;
-        console.log(`FPS: ${fps}`);
-
-        frameCount = 0;
-        clock.start();
     }
 }
 
@@ -372,5 +368,9 @@ function addDebugHelpers(piano: Piano) {
         piano.renderer.render(piano.scene, piano.camera);
     });
 
-    return { gridHelper, orbitControls };
+    const stats = new Stats();
+    document.body.appendChild(stats.dom);
+
+    piano.stats = stats;
+    return { gridHelper, orbitControls, stats };
 }

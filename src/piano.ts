@@ -3,11 +3,29 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 const pianoHeight = 8;
-const keyThicknessWhite = 0.5;
-const keyThicknessBlack = 0.2;
 const minIntensity = 0.05;
 const keyFlowYOffset = 0;
-const initialKeyFlowSize = 0.1;
+const initialKeyFlowHeight = 0.1;
+const keyBlack = {
+    width: 0.4,
+    height: pianoHeight * 0.8,
+    thickness: 0.2,
+    color: 0xaaaaaa,
+    z: (0.5 + 0.2) / 2
+};
+
+const keyWhite: typeof keyBlack = {
+    width: 0.9,
+    height: pianoHeight,
+    thickness: 0.5,
+    color: 0xffffff,
+    z: 0
+};
+
+const keyGeometryBlack = new THREE.BoxGeometry(keyBlack.width, keyBlack.height, keyBlack.thickness);
+const keyMaterialBlack = new THREE.MeshStandardMaterial({ color: keyBlack.color });
+const keyGeometryWhite = new THREE.BoxGeometry(keyWhite.width, keyWhite.height, keyWhite.thickness);
+const keyMaterialWhite = new THREE.MeshStandardMaterial({ color: keyWhite.color });
 
 type Key = {
     isBlack: boolean;
@@ -157,21 +175,18 @@ function createRenderer() {
 }
 
 function createKey(scene: THREE.Scene, x: number, isBlack: boolean): Key {
-    const keyWidth = isBlack ? 0.4 : 0.9;
-    const keyHeight = isBlack ? pianoHeight * 0.8 : pianoHeight;
+    const keyConfig = isBlack ? keyBlack : keyWhite;
 
     //TODO combine into single mesh
-    const geometry = new THREE.BoxGeometry(keyWidth, keyHeight, isBlack ? keyThicknessBlack : keyThicknessWhite);
-    const material = new THREE.MeshStandardMaterial({ color: isBlack ? 0xaaaaaa : 0xffffff });
-    const mesh = new THREE.Mesh(geometry, material);
+    const mesh = new THREE.Mesh(isBlack ? keyGeometryBlack : keyGeometryWhite, isBlack ? keyMaterialBlack : keyMaterialWhite);
     mesh.position.x = isBlack ? x - 0.5 : x;
-    mesh.position.y = - keyHeight / 2;
-    mesh.position.z = isBlack ? keyThicknessWhite / 2 + keyThicknessBlack / 2 : 0;
+    mesh.position.y = - keyConfig.height / 2;
+    mesh.position.z = keyConfig.z;
     scene.add(mesh);
 
     return {
         isBlack,
-        width: keyWidth,
+        width: keyConfig.width,
         x,
         mesh,
         pressedTimestamp: null,
@@ -251,10 +266,10 @@ function animateKeyFlow(scene: THREE.Scene, keyFlows: KeyFlow[], timestampMs: nu
             //grow keyflow, keeping bottom fixed
             const keyFlowLength = shift;
             flow.mesh.position.y = keyFlowYOffset + keyFlowLength / 2;
-            flow.mesh.scale.y = keyFlowLength / initialKeyFlowSize;
+            flow.mesh.scale.y = keyFlowLength / initialKeyFlowHeight;
         } else {
             //only shift
-            const keyFlowLength = (flow.mesh.scale.y * initialKeyFlowSize);
+            const keyFlowLength = (flow.mesh.scale.y * initialKeyFlowHeight);
             flow.mesh.position.y = keyFlowYOffset + shift - keyFlowLength / 2;
 
             //remove inactive keyflows if offscreen
@@ -281,10 +296,11 @@ function keyPressed(piano: Piano, keyIndex: number, velocity: number) {
     pointLight.position.set(
         key.mesh.position.x,
         key.mesh.position.y - 2.5,
-        key.mesh.position.z + keyThicknessWhite);
+        key.mesh.position.z + keyWhite.thickness);
     piano.scene.add(pointLight);
     if (key.light !== null) {
         piano.scene.remove(key.light);
+        key.light.dispose();
     }
     key.light = pointLight;
 
@@ -292,7 +308,7 @@ function keyPressed(piano: Piano, keyIndex: number, velocity: number) {
     const color = new THREE.Color();
     color.setHSL(getCurrentHue(pressedTimestamp), 1.0, 0.5);
 
-    const flowGeometry = new THREE.BoxGeometry(key.width, initialKeyFlowSize, 0.1);
+    const flowGeometry = new THREE.BoxGeometry(key.width, initialKeyFlowHeight, 0.1);
     const flowMaterial = new THREE.MeshLambertMaterial({ emissive: color });
     const flowMesh = new THREE.Mesh(flowGeometry, flowMaterial);
     flowMesh.position.set(key.x, keyFlowYOffset, -0.5);
@@ -319,6 +335,7 @@ function keyReleased(piano: Piano, keyIndex: number) {
 
     if (key.light) {
         piano.scene.remove(key.light);
+        key.light.dispose();
         key.light = null;
     }
 

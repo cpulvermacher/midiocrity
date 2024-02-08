@@ -1,3 +1,6 @@
+// See the following for detailed description of fields
+// https://www.midi.org/specifications-old/item/table-1-summary-of-midi-message
+
 type StartMidiArgs = {
     // key is a number from 0 to 127, with 60 being C4
     onKeyPressed: (key: number, velocity: number) => void;
@@ -40,14 +43,22 @@ export function startMIDI(args: StartMidiArgs) {
         }
         // parse midi message
         const data = message.data as Uint8Array;
-        const command = data[0];
+        const command = data[0] >> 4; //get first 4 bits
+        const channel = data[0] & 0x0F; // get last 4 bits
         const note = data[1];
         const velocity = data[2];
 
-        if (command === 144 && typeof note === 'number' && typeof velocity === 'number') {
-            args.onKeyPressed(note, velocity);
-        } else if (command === 128 && typeof note === 'number') {
+        if (command === 9 && typeof note === 'number' && typeof velocity === 'number') {
+            if (velocity === 0) {
+                args.onKeyReleased(note);
+            } else {
+                args.onKeyPressed(note, velocity);
+            }
+
+        } else if (command === 8 && typeof note === 'number') {
             args.onKeyReleased(note);
+        } else {
+            console.log("other midi msg", command, channel, note);
         }
     }
 

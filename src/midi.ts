@@ -6,6 +6,7 @@ type StartMidiArgs = {
     // key is a number from 0 to 127, with 60 being C4
     onKeyPressed: (key: number, velocity: number) => void;
     onKeyReleased: (key: number) => void;
+    onInitFailure: (reason: 'unsupported' | 'nopermissions') => void;
 };
 
 // for each MIDI channel from 1 to 16, stores whether messages were received or not
@@ -13,22 +14,20 @@ type ActiveChannels = { [key: number]: boolean; };
 
 
 export function startMIDI(args: StartMidiArgs) {
-    if (!('requestMIDIAccess' in navigator)) {
-        console.log('WebMIDI is not supported in this browser.');
+    if (!(navigator['requestMIDIAccess'])) {
+        args.onInitFailure('unsupported');
         return;
     }
 
     const activeChannels: ActiveChannels = {};
 
     navigator.requestMIDIAccess()
-        .then((midiAccess) => onSuccess(midiAccess, args, activeChannels))
-        .catch(onFailure);
+        .then(
+            (midiAccess) => onSuccess(midiAccess, args, activeChannels),
+            () => args.onInitFailure('nopermissions')
+        );
 
     return { activeChannels };
-}
-
-function onFailure() {
-    console.log('Could not access your MIDI devices.');
 }
 
 function onSuccess(midiAccess: MIDIAccess, args: StartMidiArgs, activeChannels: ActiveChannels) {

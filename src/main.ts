@@ -8,7 +8,8 @@ piano.animate();
 
 startMIDI({
     onKeyPressed: (key, velocity) => piano.keyPressed(key, velocity / 128.0),
-    onKeyReleased: piano.keyReleased
+    onKeyReleased: piano.keyReleased,
+    onInitFailure: (reason) => { throw new Error(`Failed initializing MIDI: ${reason}`); }
 });
 
 // demo mode: play random notes

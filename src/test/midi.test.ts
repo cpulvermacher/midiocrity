@@ -98,4 +98,41 @@ describe('startMIDI', () => {
         });
     });
 
+    describe('parses MIDI messages', () => {
+
+        //setup some shared ports
+        const midiInputs = [
+            { name: 'input1', state: 'connected', onmidimessage: null },
+            { name: 'input2', state: 'connected', onmidimessage: null },
+        ] as MIDIInput[];
+        beforeEach(async () => {
+            const midiAccess = {
+                inputs: midiInputs,
+                onstatechange: vi.fn()
+            } as unknown as MIDIAccess;
+            vi.mocked(navigator).requestMIDIAccess.mockResolvedValue(midiAccess);
+            startMIDI(args);
+
+            await vi.waitFor(() => {
+                expect(midiInputs[0].onmidimessage).toBeDefined();
+                expect(midiInputs[1].onmidimessage).toBeDefined();
+            });
+        });
+
+        [0, 1].forEach((port) => {
+            it(`should call onKeyPressed when a note is pressed (port ${port})`, () => {
+                const message = { data: [0x90, 60, 100] };
+                midiInputs[0].onmidimessage!(message as unknown as Event);
+
+                expect(args.onKeyPressed).toHaveBeenCalledWith(60, 100);
+            });
+
+            it(`should call onKeyReleased when a note is released (port ${port})`, () => {
+                const message = { data: [0x80, 60, 100] };
+                midiInputs[0].onmidimessage!(message as unknown as Event);
+
+                expect(args.onKeyReleased).toHaveBeenCalledWith(60);
+            });
+        });
+    });
 });

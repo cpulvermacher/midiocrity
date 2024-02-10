@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { startMIDI } from '../midi';
+import { ActiveChannels, startMIDI } from '../midi';
 
 describe('startMIDI', () => {
     const args = { onKeyPressed: vi.fn(), onKeyReleased: vi.fn(), onInitFailure: vi.fn() };
@@ -105,13 +105,16 @@ describe('startMIDI', () => {
             { name: 'input1', state: 'connected', onmidimessage: null },
             { name: 'input2', state: 'connected', onmidimessage: null },
         ] as MIDIInput[];
+        let activeChannels: ActiveChannels;
+
         beforeEach(async () => {
             const midiAccess = {
                 inputs: midiInputs,
                 onstatechange: vi.fn()
             } as unknown as MIDIAccess;
             vi.mocked(navigator).requestMIDIAccess.mockResolvedValue(midiAccess);
-            startMIDI(args);
+            ({ activeChannels } = startMIDI(args));
+
 
             await vi.waitFor(() => {
                 expect(midiInputs[0].onmidimessage).toBeDefined();
@@ -132,6 +135,28 @@ describe('startMIDI', () => {
                 midiInputs[0].onmidimessage!(message as unknown as Event);
 
                 expect(args.onKeyReleased).toHaveBeenCalledWith(60);
+            });
+        });
+
+        [1, 5, 16].forEach((channel) => {
+            it(`sends note on messages for channel ${channel}`, () => {
+                const message = { data: [0x90 + channel - 1, 60, 100] };
+                midiInputs[0].onmidimessage!(message as unknown as Event);
+                expect(args.onKeyPressed).toHaveBeenCalledWith(60, 100);
+
+                for (let i = 1; i <= 16; i++) {
+                    expect(activeChannels[i], `channel ${i}`).toBe(i === channel);
+                }
+            });
+
+            it(`sends note off messages for channel ${channel}`, () => {
+                const message = { data: [0x80 + channel - 1, 60, 100] };
+                midiInputs[0].onmidimessage!(message as unknown as Event);
+                expect(args.onKeyReleased).toHaveBeenCalledWith(60);
+
+                for (let i = 1; i <= 16; i++) {
+                    expect(activeChannels[i], `channel ${i}`).toBe(i === channel);
+                }
             });
         });
     });

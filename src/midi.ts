@@ -2,30 +2,31 @@
 // https://www.midi.org/specifications-old/item/table-1-summary-of-midi-message
 
 
-type StartMidiArgs = {
-    // key is a number from 0 to 127, with 60 being C4
+export type StartMidiArgs = {
+    // key is a number from 0 to 127, with 60 being C4, velocity is a number from 0 to 127
     onKeyPressed: (key: number, velocity: number) => void;
     onKeyReleased: (key: number) => void;
     onInitFailure: (reason: 'unsupported' | 'nopermissions') => void;
 };
 
 // for each MIDI channel from 1 to 16, stores whether messages were received or not
-type ActiveChannels = { [key: number]: boolean; };
+export type ActiveChannels = { [key: number]: boolean; };
 
 
 export function startMIDI(args: StartMidiArgs) {
-    if (!(navigator['requestMIDIAccess'])) {
-        args.onInitFailure('unsupported');
-        return;
-    }
 
     const activeChannels: ActiveChannels = {};
+    for (let i = 1; i <= 16; i++) { activeChannels[i] = false; }
 
-    navigator.requestMIDIAccess()
-        .then(
-            (midiAccess) => onSuccess(midiAccess, args, activeChannels),
-            () => args.onInitFailure('nopermissions')
-        );
+    if ((navigator['requestMIDIAccess'])) {
+        navigator.requestMIDIAccess()
+            .then(
+                (midiAccess) => onSuccess(midiAccess, args, activeChannels),
+                () => args.onInitFailure('nopermissions')
+            );
+    } else {
+        args.onInitFailure('unsupported');
+    }
 
     return { activeChannels };
 }
@@ -62,7 +63,7 @@ function processMessage(message: Event, args: StartMidiArgs, activeChannels: Act
     // parse midi message
     const data = message.data as Uint8Array;
     const command = data[0] >> 4; //get first 4 bits
-    const channel = data[0] & 0x0F; // get last 4 bits
+    const channel = (data[0] & 0x0F) + 1; // get last 4 bits
     const note = data[1];
     const velocity = data[2];
 

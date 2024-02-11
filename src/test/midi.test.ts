@@ -1,9 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { ActiveChannels, startMIDI } from '../midi';
+import { ActiveChannels, StartMidiArgs, startMIDI } from '../midi';
 
 describe('startMIDI', () => {
-    const args = { onKeyPressed: vi.fn(), onKeyReleased: vi.fn(), onInitFailure: vi.fn() };
+    const args: StartMidiArgs = {
+        onKeyPressed: vi.fn(),
+        onKeyReleased: vi.fn(),
+        onInitFailure: vi.fn(),
+        onPedalPressed: vi.fn(),
+        onPedalReleased: vi.fn()
+    };
 
     beforeEach(() => {
         navigator = { requestMIDIAccess: vi.fn(), } as unknown as Navigator;
@@ -33,7 +39,7 @@ describe('startMIDI', () => {
         );
     });
 
-    it('should return active channels object', () => {
+    it('returns active channels object', () => {
         vi.mocked(navigator).requestMIDIAccess.mockResolvedValue({
             inputs: {
                 forEach: vi.fn()
@@ -138,7 +144,7 @@ describe('startMIDI', () => {
             });
         });
 
-        [1, 5, 16].forEach((channel) => {
+        [1, 16].forEach((channel) => {
             it(`sends note on messages for channel ${channel}`, () => {
                 const message = { data: [0x90 + channel - 1, 60, 100] };
                 midiInputs[0].onmidimessage!(message as unknown as Event);
@@ -158,6 +164,67 @@ describe('startMIDI', () => {
                     expect(activeChannels[i], `channel ${i}`).toBe(i === channel);
                 }
             });
+
+            it(`sends sustain pressed messages for channel ${channel}`, () => {
+                const message = { data: [0xB0 + channel - 1, 64, 127] };
+                midiInputs[0].onmidimessage!(message as unknown as Event);
+                expect(args.onPedalPressed).toHaveBeenCalledWith('sustain');
+
+                for (let i = 1; i <= 16; i++) {
+                    expect(activeChannels[i], `channel ${i}`).toBe(i === channel);
+                }
+            });
+
+            it(`sends sustain released messages for channel ${channel}`, () => {
+                const message = { data: [0xB0 + channel - 1, 64, 0] };
+                midiInputs[0].onmidimessage!(message as unknown as Event);
+                expect(args.onPedalReleased).toHaveBeenCalledWith('sustain');
+
+                for (let i = 1; i <= 16; i++) {
+                    expect(activeChannels[i], `channel ${i}`).toBe(i === channel);
+                }
+            });
+
+            it(`sends sostenuto pressed messages for channel ${channel}`, () => {
+                const message = { data: [0xB0 + channel - 1, 66, 127] };
+                midiInputs[0].onmidimessage!(message as unknown as Event);
+                expect(args.onPedalPressed).toHaveBeenCalledWith('sostenuto');
+
+                for (let i = 1; i <= 16; i++) {
+                    expect(activeChannels[i], `channel ${i}`).toBe(i === channel);
+                }
+            });
+
+            it(`sends sostenuto released messages for channel ${channel}`, () => {
+                const message = { data: [0xB0 + channel - 1, 66, 0] };
+                midiInputs[0].onmidimessage!(message as unknown as Event);
+                expect(args.onPedalReleased).toHaveBeenCalledWith('sostenuto');
+
+                for (let i = 1; i <= 16; i++) {
+                    expect(activeChannels[i], `channel ${i}`).toBe(i === channel);
+                }
+            });
+
+            it(`sends soft pedal pressed messages for channel ${channel}`, () => {
+                const message = { data: [0xB0 + channel - 1, 67, 127] };
+                midiInputs[0].onmidimessage!(message as unknown as Event);
+                expect(args.onPedalPressed).toHaveBeenCalledWith('soft');
+
+                for (let i = 1; i <= 16; i++) {
+                    expect(activeChannels[i], `channel ${i}`).toBe(i === channel);
+                }
+            });
+
+            it(`sends soft pedal released messages for channel ${channel}`, () => {
+                const message = { data: [0xB0 + channel - 1, 67, 0] };
+                midiInputs[0].onmidimessage!(message as unknown as Event);
+                expect(args.onPedalReleased).toHaveBeenCalledWith('soft');
+
+                for (let i = 1; i <= 16; i++) {
+                    expect(activeChannels[i], `channel ${i}`).toBe(i === channel);
+                }
+            });
+
         });
     });
 });

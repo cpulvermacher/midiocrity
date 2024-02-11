@@ -1,13 +1,13 @@
-// See the following for detailed description of fields
-// https://www.midi.org/specifications-old/item/table-1-summary-of-midi-message
-
-
 export type StartMidiArgs = {
     // key is a number from 0 to 127, with 60 being C4, velocity is a number from 0 to 127
     onKeyPressed: (key: number, velocity: number) => void;
     onKeyReleased: (key: number) => void;
-    onInitFailure: (reason: 'unsupported' | 'nopermissions') => void;
+    onPedalPressed?: (pedal: Pedal) => void;
+    onPedalReleased?: (pedal: Pedal) => void;
+    onInitFailure?: (reason: 'unsupported' | 'nopermissions') => void;
 };
+
+export type Pedal = 'soft' | 'sostenuto' | 'sustain';
 
 // for each MIDI channel from 1 to 16, stores whether messages were received or not
 export type ActiveChannels = { [key: number]: boolean; };
@@ -22,10 +22,10 @@ export function startMIDI(args: StartMidiArgs) {
         navigator.requestMIDIAccess()
             .then(
                 (midiAccess) => onSuccess(midiAccess, args, activeChannels),
-                () => args.onInitFailure('nopermissions')
+                () => args.onInitFailure!('nopermissions')
             );
     } else {
-        args.onInitFailure('unsupported');
+        args.onInitFailure!('unsupported');
     }
 
     return { activeChannels };
@@ -37,7 +37,7 @@ function onSuccess(midiAccess: MIDIAccess, args: StartMidiArgs, activeChannels: 
     const onMidiMessage = (message: Event) => processMessage(message, args, activeChannels);
     // Attach MIDI event "midimessage" to each input
     inputs.forEach(function (input) {
-        console.log('Found MIDI input:', input.name, ", state: ", input.state);
+        console.debug('Found MIDI input:', input.name, ", state: ", input.state);
         input.onmidimessage = onMidiMessage;
     });
 
@@ -47,7 +47,7 @@ function onSuccess(midiAccess: MIDIAccess, args: StartMidiArgs, activeChannels: 
             return;
         }
         const port = midiEvent.port as MIDIInput;
-        console.log('MIDI state change:', port.name, ", state: ", port.state);
+        console.debug('MIDI state change:', port.name, ", state: ", port.state);
         if (port.state === 'connected') {
             port.onmidimessage = onMidiMessage;
         } else {
@@ -60,25 +60,61 @@ function processMessage(message: Event, args: StartMidiArgs, activeChannels: Act
     if (!("data" in message)) {
         return;
     }
-    // parse midi message
+    // parse midi message, see
+    // https://www.midi.org/specifications-old/item/table-1-summary-of-midi-message
     const data = message.data as Uint8Array;
     const command = data[0] >> 4; //get first 4 bits
-    const channel = (data[0] & 0x0F) + 1; // get last 4 bits
-    const note = data[1];
-    const velocity = data[2];
+    const statusLowBits = (data[0] & 0x0F); // get last 4 bits
 
-    if (command === 9 && typeof note === 'number' && typeof velocity === 'number') {
+    if (command === 8 || command === 9) { // note off / note on
+        const channel = statusLowBits + 1;
+        const note = data[1];
+        const velocity = data[2];
         activeChannels[channel] = true;
-        if (velocity === 0) {
+
+        if (command === 8 || velocity === 0) {
             args.onKeyReleased(note);
-        } else {
+        } else if (command === 9) {
             args.onKeyPressed(note, velocity);
         }
+    } else if (command === 11) {
+        // control mode / control change (includes pedals)
+        // https://www.midi.org/specifications-old/item/table-3-control-change-messages-data-bytes-2
+        const controllerNo = data[1];
+        const controllerValue = data[2];
 
-    } else if (command === 8 && typeof note === 'number') {
-        activeChannels[channel] = true;
-        args.onKeyReleased(note);
+        // control change messages
+        if (controllerNo < 120) {
+            const channel = statusLowBits + 1;
+            activeChannels[channel] = true;
+            let pedal: Pedal;
+            if (controllerNo === 64) {
+                pedal = 'sustain';
+            } else if (controllerNo === 66) {
+                pedal = 'sostenuto';
+            } else if (controllerNo === 67) {
+                pedal = 'soft';
+            } else {
+                return;
+            }
+
+            const pedalThreshold = 64;
+            if (controllerValue >= pedalThreshold) {
+                args.onPedalPressed?.(pedal);
+            } else {
+                args.onPedalReleased?.(pedal);
+            }
+            //120-127 are reserved for control mode messages
+        } else if (controllerNo === 121 && controllerValue === 0) {
+            // reset all controllers
+            console.debug('Received all controllers off message on channel', statusLowBits + 1);
+        } else if (controllerNo === 123 && controllerValue === 0) {
+            // all notes off
+            console.debug('Received all notes off message on channel', statusLowBits + 1);
+        } else {
+            console.debug(`Received unknown control mode MIDI message: ${command} ${statusLowBits} ${controllerNo} ${controllerValue}`);
+        }
     } else {
-        console.log("other midi msg", command, channel, note);
+        console.debug(`Received unknown MIDI message: ${command} ${statusLowBits} ${data} -`);
     }
 }

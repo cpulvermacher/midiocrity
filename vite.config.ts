@@ -6,8 +6,7 @@ export default defineConfig(({ mode }) => ({
         environment: 'happy-dom'
     },
     esbuild: {
-        // pure: mode === 'production' ? ['console.log'] : [],
-        pure: mode === 'production' ? [] : [],
+        pure: mode === 'production' ? ['console.log', 'console.debug'] : [],
     },
     build: {
         outDir: 'dist',

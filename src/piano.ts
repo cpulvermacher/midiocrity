@@ -12,7 +12,7 @@ const keyBlack = {
     height: pianoHeight * 0.8,
     thickness: 0.2,
     color: 0xaaaaaa,
-    z: (0.5 + 0.2) / 2
+    z: (0.5 + 0.2) / 2,
 };
 
 const keyWhite: typeof keyBlack = {
@@ -20,13 +20,25 @@ const keyWhite: typeof keyBlack = {
     height: pianoHeight,
     thickness: 0.5,
     color: 0xffffff,
-    z: 0
+    z: 0,
 };
 
-const keyGeometryBlack = new THREE.BoxGeometry(keyBlack.width, keyBlack.height, keyBlack.thickness);
-const keyMaterialBlack = new THREE.MeshStandardMaterial({ color: keyBlack.color });
-const keyGeometryWhite = new THREE.BoxGeometry(keyWhite.width, keyWhite.height, keyWhite.thickness);
-const keyMaterialWhite = new THREE.MeshStandardMaterial({ color: keyWhite.color });
+const keyGeometryBlack = new THREE.BoxGeometry(
+    keyBlack.width,
+    keyBlack.height,
+    keyBlack.thickness
+);
+const keyMaterialBlack = new THREE.MeshStandardMaterial({
+    color: keyBlack.color,
+});
+const keyGeometryWhite = new THREE.BoxGeometry(
+    keyWhite.width,
+    keyWhite.height,
+    keyWhite.thickness
+);
+const keyMaterialWhite = new THREE.MeshStandardMaterial({
+    color: keyWhite.color,
+});
 
 type Key = {
     isBlack: boolean;
@@ -93,7 +105,7 @@ export function createPiano(numKeys = 88) {
         lights: createLights(scene),
         keys: createKeys(scene, config),
         keyFlows: [],
-        stats: null
+        stats: null,
     };
 
     if (import.meta.env.MODE === 'development') {
@@ -117,11 +129,12 @@ export function createPiano(numKeys = 88) {
 
     return {
         keyPressed: (note: number, velocity: number) => {
-            keyPressed(piano, (note - config.lowestMidiNote), velocity);
+            keyPressed(piano, note - config.lowestMidiNote, velocity);
             startAnimation();
         },
-        keyReleased: (note: number) => keyReleased(piano, (note - config.lowestMidiNote)),
-        animate: startAnimation
+        keyReleased: (note: number) =>
+            keyReleased(piano, note - config.lowestMidiNote),
+        animate: startAnimation,
     };
 }
 
@@ -133,7 +146,7 @@ function getLowestMidiNote(numKeys: number): number {
     } else if (numKeys === 88) {
         return 21; // A0
     } else {
-        console.error("unsupported keyboard size");
+        console.error('unsupported keyboard size');
         return 0;
     }
 }
@@ -152,7 +165,11 @@ function createScene() {
     const scene = new THREE.Scene();
 
     const floorGeometry = new THREE.BoxGeometry(2000, 0.1, 2000);
-    const floorMaterial = new THREE.MeshStandardMaterial({ color: 0xbcbcbc, roughness: 0.2, metalness: 0.1 });
+    const floorMaterial = new THREE.MeshStandardMaterial({
+        color: 0xbcbcbc,
+        roughness: 0.2,
+        metalness: 0.1,
+    });
     const floor = new THREE.Mesh(floorGeometry, floorMaterial);
 
     floor.position.y = -pianoHeight;
@@ -162,7 +179,10 @@ function createScene() {
 }
 
 function createCamera() {
-    const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight);
+    const camera = new THREE.PerspectiveCamera(
+        50,
+        window.innerWidth / window.innerHeight
+    );
     camera.position.set(0, 0, 50);
 
     return camera;
@@ -179,9 +199,12 @@ function createKey(scene: THREE.Scene, x: number, isBlack: boolean): Key {
     const keyConfig = isBlack ? keyBlack : keyWhite;
 
     //TODO combine into single mesh
-    const mesh = new THREE.Mesh(isBlack ? keyGeometryBlack : keyGeometryWhite, isBlack ? keyMaterialBlack : keyMaterialWhite);
+    const mesh = new THREE.Mesh(
+        isBlack ? keyGeometryBlack : keyGeometryWhite,
+        isBlack ? keyMaterialBlack : keyMaterialWhite
+    );
     mesh.position.x = isBlack ? x - keyDistance / 2 : x;
-    mesh.position.y = - keyConfig.height / 2;
+    mesh.position.y = -keyConfig.height / 2;
     mesh.position.z = keyConfig.z;
     scene.add(mesh);
 
@@ -192,7 +215,7 @@ function createKey(scene: THREE.Scene, x: number, isBlack: boolean): Key {
         mesh,
         pressedTimestamp: null,
         light: null,
-        activeKeyFlow: null
+        activeKeyFlow: null,
     };
 }
 
@@ -200,7 +223,7 @@ function createKeys(scene: THREE.Scene, config: Config) {
     const keys = [];
     const blackKeys = [1, 3, 6, 8, 10];
     //center the keyboard around x=0, and align to have white keys between gridlines
-    let x = -Math.floor(config.numKeys / 12) * 7 / 2 * keyDistance;
+    let x = ((-Math.floor(config.numKeys / 12) * 7) / 2) * keyDistance;
 
     for (let i = 0; i < config.numKeys; i++) {
         const isBlack = blackKeys.includes((i + config.keyOffset) % 12);
@@ -254,7 +277,11 @@ function getCurrentHue(timestampMs: number) {
     return Math.sin(timestampMs / 20000);
 }
 
-function animateKeyFlow(scene: THREE.Scene, keyFlows: KeyFlow[], timestampMs: number) {
+function animateKeyFlow(
+    scene: THREE.Scene,
+    keyFlows: KeyFlow[],
+    timestampMs: number
+) {
     const yShiftPerMs = 1 / 1_000;
     const yThresholdForRemoval = 30;
 
@@ -270,7 +297,7 @@ function animateKeyFlow(scene: THREE.Scene, keyFlows: KeyFlow[], timestampMs: nu
             flow.mesh.scale.y = keyFlowLength / initialKeyFlowHeight;
         } else {
             //only shift
-            const keyFlowLength = (flow.mesh.scale.y * initialKeyFlowHeight);
+            const keyFlowLength = flow.mesh.scale.y * initialKeyFlowHeight;
             flow.mesh.position.y = keyFlowYOffset + shift - keyFlowLength / 2;
 
             //remove inactive keyflows if offscreen
@@ -290,14 +317,18 @@ function keyPressed(piano: Piano, keyIndex: number, velocity: number) {
         return;
     }
 
-    const pressedTimestamp = document.timeline.currentTime as number ?? 0;
+    const pressedTimestamp = (document.timeline.currentTime as number) ?? 0;
 
     const key = piano.keys[keyIndex];
-    const pointLight = new THREE.PointLight(0xff0000, Math.pow(100, velocity) - 1 + minIntensity);
+    const pointLight = new THREE.PointLight(
+        0xff0000,
+        Math.pow(100, velocity) - 1 + minIntensity
+    );
     pointLight.position.set(
         key.mesh.position.x,
         key.mesh.position.y - 2.5,
-        key.mesh.position.z + keyWhite.thickness);
+        key.mesh.position.z + keyWhite.thickness
+    );
     piano.scene.add(pointLight);
     if (key.light !== null) {
         piano.scene.remove(key.light);
@@ -309,13 +340,21 @@ function keyPressed(piano: Piano, keyIndex: number, velocity: number) {
     const color = new THREE.Color();
     color.setHSL(getCurrentHue(pressedTimestamp), 1.0, 0.5);
 
-    const flowGeometry = new THREE.BoxGeometry(key.width, initialKeyFlowHeight, 0.1);
+    const flowGeometry = new THREE.BoxGeometry(
+        key.width,
+        initialKeyFlowHeight,
+        0.1
+    );
     const flowMaterial = new THREE.MeshLambertMaterial({ emissive: color });
     const flowMesh = new THREE.Mesh(flowGeometry, flowMaterial);
     flowMesh.position.set(key.x, keyFlowYOffset, -0.5);
 
     piano.scene.add(flowMesh);
-    const keyFlow = { active: true, timestamp: pressedTimestamp, mesh: flowMesh };
+    const keyFlow = {
+        active: true,
+        timestamp: pressedTimestamp,
+        mesh: flowMesh,
+    };
     piano.keyFlows.push(keyFlow);
     if (key.activeKeyFlow) {
         key.activeKeyFlow.active = false;
@@ -343,14 +382,16 @@ function keyReleased(piano: Piano, keyIndex: number) {
         key.activeKeyFlow.active = false;
         key.activeKeyFlow = null;
     }
-
 }
-
 
 function animate(piano: Piano, timestampMs: number = 0) {
     piano.stats?.begin();
     const lightsDirty = animateLights(piano.keys, timestampMs);
-    const keyFlowDirty = animateKeyFlow(piano.scene, piano.keyFlows, timestampMs);
+    const keyFlowDirty = animateKeyFlow(
+        piano.scene,
+        piano.keyFlows,
+        timestampMs
+    );
     const cameraDirty = animateCameraToFitScreen(piano);
     piano.animationRunning = lightsDirty || keyFlowDirty || cameraDirty;
 
@@ -367,9 +408,11 @@ function animateCameraToFitScreen(piano: Piano) {
     piano.camera.getWorldPosition(cameraPosition);
     const viewSize = new THREE.Vector2();
     piano.camera.getViewSize(cameraPosition.z, viewSize);
-    const desiredXViewSize = piano.config.numKeys / 12 * 7 * keyDistance;
+    const desiredXViewSize = (piano.config.numKeys / 12) * 7 * keyDistance;
     if (Math.abs(viewSize.x - desiredXViewSize) > 0.2) {
-        piano.camera.position.z -= Math.max(0.1, 0.1 * Math.abs((viewSize.x - desiredXViewSize))) * Math.sign(viewSize.x - desiredXViewSize);
+        piano.camera.position.z -=
+            Math.max(0.1, 0.1 * Math.abs(viewSize.x - desiredXViewSize)) *
+            Math.sign(viewSize.x - desiredXViewSize);
         return true;
     }
     return false;
@@ -380,7 +423,10 @@ function addDebugHelpers(piano: Piano) {
     gridHelper.rotation.x = Math.PI / 2; // Rotate the gridHelper 90 degrees
     // piano.scene.add(gridHelper);
 
-    const orbitControls = new OrbitControls(piano.camera, piano.renderer.domElement);
+    const orbitControls = new OrbitControls(
+        piano.camera,
+        piano.renderer.domElement
+    );
     orbitControls.addEventListener('change', () => {
         piano.renderer.render(piano.scene, piano.camera);
     });

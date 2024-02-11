@@ -10,20 +10,19 @@ export type StartMidiArgs = {
 export type Pedal = 'soft' | 'sostenuto' | 'sustain';
 
 // for each MIDI channel from 1 to 16, stores whether messages were received or not
-export type ActiveChannels = { [key: number]: boolean; };
-
+export type ActiveChannels = { [key: number]: boolean };
 
 export function startMIDI(args: StartMidiArgs) {
-
     const activeChannels: ActiveChannels = {};
-    for (let i = 1; i <= 16; i++) { activeChannels[i] = false; }
+    for (let i = 1; i <= 16; i++) {
+        activeChannels[i] = false;
+    }
 
-    if ((navigator['requestMIDIAccess'])) {
-        navigator.requestMIDIAccess()
-            .then(
-                (midiAccess) => onSuccess(midiAccess, args, activeChannels),
-                () => args.onInitFailure!('nopermissions')
-            );
+    if (navigator['requestMIDIAccess']) {
+        navigator.requestMIDIAccess().then(
+            (midiAccess) => onSuccess(midiAccess, args, activeChannels),
+            () => args.onInitFailure!('nopermissions')
+        );
     } else {
         args.onInitFailure!('unsupported');
     }
@@ -31,13 +30,23 @@ export function startMIDI(args: StartMidiArgs) {
     return { activeChannels };
 }
 
-function onSuccess(midiAccess: MIDIAccess, args: StartMidiArgs, activeChannels: ActiveChannels) {
+function onSuccess(
+    midiAccess: MIDIAccess,
+    args: StartMidiArgs,
+    activeChannels: ActiveChannels
+) {
     const inputs = midiAccess.inputs;
 
-    const onMidiMessage = (message: Event) => processMessage(message, args, activeChannels);
+    const onMidiMessage = (message: Event) =>
+        processMessage(message, args, activeChannels);
     // Attach MIDI event "midimessage" to each input
     inputs.forEach(function (input) {
-        console.debug('Found MIDI input:', input.name, ", state: ", input.state);
+        console.debug(
+            'Found MIDI input:',
+            input.name,
+            ', state: ',
+            input.state
+        );
         input.onmidimessage = onMidiMessage;
     });
 
@@ -47,7 +56,7 @@ function onSuccess(midiAccess: MIDIAccess, args: StartMidiArgs, activeChannels: 
             return;
         }
         const port = midiEvent.port as MIDIInput;
-        console.debug('MIDI state change:', port.name, ", state: ", port.state);
+        console.debug('MIDI state change:', port.name, ', state: ', port.state);
         if (port.state === 'connected') {
             port.onmidimessage = onMidiMessage;
         } else {
@@ -56,17 +65,22 @@ function onSuccess(midiAccess: MIDIAccess, args: StartMidiArgs, activeChannels: 
     };
 }
 
-function processMessage(message: Event, args: StartMidiArgs, activeChannels: ActiveChannels) {
-    if (!("data" in message)) {
+function processMessage(
+    message: Event,
+    args: StartMidiArgs,
+    activeChannels: ActiveChannels
+) {
+    if (!('data' in message)) {
         return;
     }
     // parse midi message, see
     // https://www.midi.org/specifications-old/item/table-1-summary-of-midi-message
     const data = message.data as Uint8Array;
     const command = data[0] >> 4; //get first 4 bits
-    const statusLowBits = (data[0] & 0x0F); // get last 4 bits
+    const statusLowBits = data[0] & 0x0f; // get last 4 bits
 
-    if (command === 8 || command === 9) { // note off / note on
+    if (command === 8 || command === 9) {
+        // note off / note on
         const channel = statusLowBits + 1;
         const note = data[1];
         const velocity = data[2];
@@ -107,14 +121,24 @@ function processMessage(message: Event, args: StartMidiArgs, activeChannels: Act
             //120-127 are reserved for control mode messages
         } else if (controllerNo === 121 && controllerValue === 0) {
             // reset all controllers
-            console.debug('Received all controllers off message on channel', statusLowBits + 1);
+            console.debug(
+                'Received all controllers off message on channel',
+                statusLowBits + 1
+            );
         } else if (controllerNo === 123 && controllerValue === 0) {
             // all notes off
-            console.debug('Received all notes off message on channel', statusLowBits + 1);
+            console.debug(
+                'Received all notes off message on channel',
+                statusLowBits + 1
+            );
         } else {
-            console.debug(`Received unknown control mode MIDI message: ${command} ${statusLowBits} ${controllerNo} ${controllerValue}`);
+            console.debug(
+                `Received unknown control mode MIDI message: ${command} ${statusLowBits} ${controllerNo} ${controllerValue}`
+            );
         }
     } else {
-        console.debug(`Received unknown MIDI message: ${command} ${statusLowBits} ${data} -`);
+        console.debug(
+            `Received unknown MIDI message: ${command} ${statusLowBits} ${data} -`
+        );
     }
 }

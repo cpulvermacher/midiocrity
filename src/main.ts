@@ -9,7 +9,9 @@ piano.animate();
 startMIDI({
     onKeyPressed: (key, velocity) => piano.keyPressed(key, velocity / 128.0),
     onKeyReleased: piano.keyReleased,
-    onInitFailure: (reason) => { throw new Error(`Failed initializing MIDI: ${reason}`); }
+    onInitFailure: (reason) => {
+        throw new Error(`Failed initializing MIDI: ${reason}`);
+    },
 });
 
 // demo mode: play random notes
@@ -20,12 +22,11 @@ window.addEventListener('keydown', function (event) {
             clearInterval(demoLoop);
             demoLoop = null;
         } else {
-            demoLoop = setInterval(
-                () => {
-                    const key = Math.floor(Math.random() * numKeys);
-                    piano.keyPressed(21 + key, 0.5);
-                    setTimeout(() => piano.keyReleased(21 + key), 3000);
-                }, 500);
+            demoLoop = setInterval(() => {
+                const key = Math.floor(Math.random() * numKeys);
+                piano.keyPressed(21 + key, 0.5);
+                setTimeout(() => piano.keyReleased(21 + key), 3000);
+            }, 500);
         }
     }
 });

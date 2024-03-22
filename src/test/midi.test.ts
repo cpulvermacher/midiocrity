@@ -141,14 +141,18 @@ describe('startMIDI', () => {
         [0, 1].forEach((port) => {
             it(`should call onKeyPressed when a note is pressed (port ${port})`, () => {
                 const message = { data: [0x90, 60, 100] };
-                midiInputs[0].onmidimessage!(message as unknown as Event);
+                midiInputs[0].onmidimessage!(
+                    message as unknown as MIDIMessageEvent
+                );
 
                 expect(args.onKeyPressed).toHaveBeenCalledWith(60, 100);
             });
 
             it(`should call onKeyReleased when a note is released (port ${port})`, () => {
                 const message = { data: [0x80, 60, 100] };
-                midiInputs[0].onmidimessage!(message as unknown as Event);
+                midiInputs[0].onmidimessage!(
+                    message as unknown as MIDIMessageEvent
+                );
 
                 expect(args.onKeyReleased).toHaveBeenCalledWith(60);
             });
@@ -157,7 +161,9 @@ describe('startMIDI', () => {
         [1, 16].forEach((channel) => {
             it(`sends note on messages for channel ${channel}`, () => {
                 const message = { data: [0x90 + channel - 1, 60, 100] };
-                midiInputs[0].onmidimessage!(message as unknown as Event);
+                midiInputs[0].onmidimessage!(
+                    message as unknown as MIDIMessageEvent
+                );
                 expect(args.onKeyPressed).toHaveBeenCalledWith(60, 100);
 
                 for (let i = 1; i <= 16; i++) {
@@ -169,7 +175,9 @@ describe('startMIDI', () => {
 
             it(`sends note off messages for channel ${channel}`, () => {
                 const message = { data: [0x80 + channel - 1, 60, 100] };
-                midiInputs[0].onmidimessage!(message as unknown as Event);
+                midiInputs[0].onmidimessage!(
+                    message as unknown as MIDIMessageEvent
+                );
                 expect(args.onKeyReleased).toHaveBeenCalledWith(60);
 
                 for (let i = 1; i <= 16; i++) {
@@ -181,7 +189,9 @@ describe('startMIDI', () => {
 
             it(`sends sustain pressed messages for channel ${channel}`, () => {
                 const message = { data: [0xb0 + channel - 1, 64, 127] };
-                midiInputs[0].onmidimessage!(message as unknown as Event);
+                midiInputs[0].onmidimessage!(
+                    message as unknown as MIDIMessageEvent
+                );
                 expect(args.onPedalPressed).toHaveBeenCalledWith('sustain');
 
                 for (let i = 1; i <= 16; i++) {
@@ -193,7 +203,9 @@ describe('startMIDI', () => {
 
             it(`sends sustain released messages for channel ${channel}`, () => {
                 const message = { data: [0xb0 + channel - 1, 64, 0] };
-                midiInputs[0].onmidimessage!(message as unknown as Event);
+                midiInputs[0].onmidimessage!(
+                    message as unknown as MIDIMessageEvent
+                );
                 expect(args.onPedalReleased).toHaveBeenCalledWith('sustain');
 
                 for (let i = 1; i <= 16; i++) {
@@ -205,7 +217,9 @@ describe('startMIDI', () => {
 
             it(`sends sostenuto pressed messages for channel ${channel}`, () => {
                 const message = { data: [0xb0 + channel - 1, 66, 127] };
-                midiInputs[0].onmidimessage!(message as unknown as Event);
+                midiInputs[0].onmidimessage!(
+                    message as unknown as MIDIMessageEvent
+                );
                 expect(args.onPedalPressed).toHaveBeenCalledWith('sostenuto');
 
                 for (let i = 1; i <= 16; i++) {
@@ -217,7 +231,9 @@ describe('startMIDI', () => {
 
             it(`sends sostenuto released messages for channel ${channel}`, () => {
                 const message = { data: [0xb0 + channel - 1, 66, 0] };
-                midiInputs[0].onmidimessage!(message as unknown as Event);
+                midiInputs[0].onmidimessage!(
+                    message as unknown as MIDIMessageEvent
+                );
                 expect(args.onPedalReleased).toHaveBeenCalledWith('sostenuto');
 
                 for (let i = 1; i <= 16; i++) {
@@ -229,7 +245,9 @@ describe('startMIDI', () => {
 
             it(`sends soft pedal pressed messages for channel ${channel}`, () => {
                 const message = { data: [0xb0 + channel - 1, 67, 127] };
-                midiInputs[0].onmidimessage!(message as unknown as Event);
+                midiInputs[0].onmidimessage!(
+                    message as unknown as MIDIMessageEvent
+                );
                 expect(args.onPedalPressed).toHaveBeenCalledWith('soft');
 
                 for (let i = 1; i <= 16; i++) {
@@ -241,7 +259,9 @@ describe('startMIDI', () => {
 
             it(`sends soft pedal released messages for channel ${channel}`, () => {
                 const message = { data: [0xb0 + channel - 1, 67, 0] };
-                midiInputs[0].onmidimessage!(message as unknown as Event);
+                midiInputs[0].onmidimessage!(
+                    message as unknown as MIDIMessageEvent
+                );
                 expect(args.onPedalReleased).toHaveBeenCalledWith('soft');
 
                 for (let i = 1; i <= 16; i++) {

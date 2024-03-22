@@ -52,7 +52,7 @@ function onSuccess(
 
     midiAccess.onstatechange = function (event: Event) {
         const midiEvent = event as MIDIConnectionEvent;
-        if (midiEvent.port.type !== 'input') {
+        if (midiEvent.port?.type !== 'input') {
             return;
         }
         const port = midiEvent.port as MIDIInput;

@@ -5,7 +5,7 @@
 
 Use your browser to turn masterful music into lackluster visuals.
 
-[URL here]
+[https://cpulvermacher.github.io/midiocrity](https://cpulvermacher.github.io/midiocrity)
 
 ## Usage
 Connect your MIDI controller, allow your browser to access MIDI and things should work.

@@ -112,12 +112,12 @@ export function createPiano(numKeys = 88) {
         addDebugHelpers(piano);
     }
 
-    const startAnimation = () => {
+    function startAnimation() {
         //only start animation if it's not active yet
         if (!piano.animationRunning) {
             animate(piano);
         }
-    };
+    }
 
     function onWindowResize() {
         camera.aspect = window.innerWidth / window.innerHeight;
@@ -125,7 +125,6 @@ export function createPiano(numKeys = 88) {
         renderer.setSize(window.innerWidth, window.innerHeight);
         startAnimation();
     }
-    window.addEventListener('resize', onWindowResize);
 
     return {
         keyPressed: (note: number, velocity: number) => {
@@ -135,6 +134,7 @@ export function createPiano(numKeys = 88) {
         keyReleased: (note: number) =>
             keyReleased(piano, note - config.lowestMidiNote),
         animate: startAnimation,
+        onWindowResize,
     };
 }
 
@@ -418,6 +418,7 @@ function animateCameraToFitScreen(piano: Piano) {
     return false;
 }
 
+/** add FPS graph and scene navigation (removed in production build) */
 function addDebugHelpers(piano: Piano) {
     const gridHelper = new THREE.GridHelper(100, 100);
     gridHelper.rotation.x = Math.PI / 2; // Rotate the gridHelper 90 degrees

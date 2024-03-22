@@ -4,6 +4,7 @@ import { createPiano } from './piano';
 const numKeys = 88;
 
 const piano = createPiano(numKeys);
+window.addEventListener('resize', piano.onWindowResize);
 piano.animate();
 
 startMIDI({

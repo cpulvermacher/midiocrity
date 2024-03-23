@@ -7,7 +7,7 @@ const piano = createPiano(numKeys);
 window.addEventListener('resize', piano.onWindowResize);
 piano.animate();
 
-startMIDI({
+const { activeChannels } = startMIDI({
     onKeyPressed: (key, velocity) => piano.keyPressed(key, velocity / 128.0),
     onKeyReleased: piano.keyReleased,
     onPedalPressed: (pedal, value) => piano.pedalPressed(pedal, value / 128.0),
@@ -24,6 +24,15 @@ startMIDI({
         }
     },
 });
+
+setInterval(() => {
+    Object.entries(activeChannels).forEach(
+        ([id, value]) =>
+            (document.getElementById(`channel-${id}`)!.className = value
+                ? 'dot-on'
+                : 'dot-off')
+    );
+}, 2000);
 
 // press 'd' to start demo
 let demoLoop: number | null = null;

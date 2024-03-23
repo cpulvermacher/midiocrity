@@ -25,8 +25,9 @@ startMIDI({
     },
 });
 
-// demo mode: play random notes
+// press 'd' to start demo
 let demoLoop: number | null = null;
+let key = 0;
 window.addEventListener('keydown', function (event) {
     if (event.key === 'd') {
         if (demoLoop !== null) {
@@ -34,10 +35,14 @@ window.addEventListener('keydown', function (event) {
             demoLoop = null;
         } else {
             demoLoop = setInterval(() => {
-                const key = Math.floor(Math.random() * numKeys);
-                piano.keyPressed(21 + key, 0.5);
-                setTimeout(() => piano.keyReleased(21 + key), 3000);
-            }, 500);
+                const pressedKey = key + 21;
+                piano.keyPressed(pressedKey, 0.5);
+                key++;
+                if (key >= numKeys) {
+                    key = 0;
+                }
+                setTimeout(() => piano.keyReleased(pressedKey), 2000);
+            }, 20);
         }
     }
 });

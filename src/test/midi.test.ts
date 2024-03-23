@@ -193,7 +193,10 @@ describe('startMIDI', () => {
                 midiInputs[0].onmidimessage!(
                     message as unknown as MIDIMessageEvent
                 );
-                expect(args.onPedalPressed).toHaveBeenCalledWith('sustain');
+                expect(args.onPedalPressed).toHaveBeenCalledWith(
+                    'sustain',
+                    127
+                );
 
                 for (let i = 1; i <= 16; i++) {
                     expect(activeChannels[i], `channel ${i}`).toBe(
@@ -207,7 +210,7 @@ describe('startMIDI', () => {
                 midiInputs[0].onmidimessage!(
                     message as unknown as MIDIMessageEvent
                 );
-                expect(args.onPedalReleased).toHaveBeenCalledWith('sustain');
+                expect(args.onPedalReleased).toHaveBeenCalledWith('sustain', 0);
 
                 for (let i = 1; i <= 16; i++) {
                     expect(activeChannels[i], `channel ${i}`).toBe(
@@ -221,7 +224,10 @@ describe('startMIDI', () => {
                 midiInputs[0].onmidimessage!(
                     message as unknown as MIDIMessageEvent
                 );
-                expect(args.onPedalPressed).toHaveBeenCalledWith('sostenuto');
+                expect(args.onPedalPressed).toHaveBeenCalledWith(
+                    'sostenuto',
+                    127
+                );
 
                 for (let i = 1; i <= 16; i++) {
                     expect(activeChannels[i], `channel ${i}`).toBe(
@@ -235,7 +241,10 @@ describe('startMIDI', () => {
                 midiInputs[0].onmidimessage!(
                     message as unknown as MIDIMessageEvent
                 );
-                expect(args.onPedalReleased).toHaveBeenCalledWith('sostenuto');
+                expect(args.onPedalReleased).toHaveBeenCalledWith(
+                    'sostenuto',
+                    0
+                );
 
                 for (let i = 1; i <= 16; i++) {
                     expect(activeChannels[i], `channel ${i}`).toBe(
@@ -249,7 +258,7 @@ describe('startMIDI', () => {
                 midiInputs[0].onmidimessage!(
                     message as unknown as MIDIMessageEvent
                 );
-                expect(args.onPedalPressed).toHaveBeenCalledWith('soft');
+                expect(args.onPedalPressed).toHaveBeenCalledWith('soft', 127);
 
                 for (let i = 1; i <= 16; i++) {
                     expect(activeChannels[i], `channel ${i}`).toBe(
@@ -263,7 +272,7 @@ describe('startMIDI', () => {
                 midiInputs[0].onmidimessage!(
                     message as unknown as MIDIMessageEvent
                 );
-                expect(args.onPedalReleased).toHaveBeenCalledWith('soft');
+                expect(args.onPedalReleased).toHaveBeenCalledWith('soft', 0);
 
                 for (let i = 1; i <= 16; i++) {
                     expect(activeChannels[i], `channel ${i}`).toBe(

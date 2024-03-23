@@ -10,6 +10,8 @@ piano.animate();
 startMIDI({
     onKeyPressed: (key, velocity) => piano.keyPressed(key, velocity / 128.0),
     onKeyReleased: piano.keyReleased,
+    onPedalPressed: (pedal, value) => piano.pedalPressed(pedal, value / 128.0),
+    onPedalReleased: (pedal, value) => piano.pedalPressed(pedal, value / 128.0),
     onInit: () => {
         document.getElementById('loading')!.style.display = 'none';
     },

@@ -2,13 +2,13 @@ export type StartMidiArgs = {
     // key is a number from 0 to 127, with 60 being C4, velocity is a number from 0 to 127
     onKeyPressed: (key: number, velocity: number) => void;
     onKeyReleased: (key: number) => void;
-    onPedalPressed?: (pedal: Pedal) => void;
-    onPedalReleased?: (pedal: Pedal) => void;
+    onPedalPressed?: (pedal: PedalType, value: number) => void;
+    onPedalReleased?: (pedal: PedalType, value: number) => void;
     onInit: () => void;
     onInitFailure: (reason: 'unsupported' | 'nopermissions') => void;
 };
 
-export type Pedal = 'soft' | 'sostenuto' | 'sustain';
+export type PedalType = 'soft' | 'sostenuto' | 'sustain';
 
 // for each MIDI channel from 1 to 16, stores whether messages were received or not
 export type ActiveChannels = { [key: number]: boolean };
@@ -105,7 +105,7 @@ function processMessage(
         if (controllerNo < 120) {
             const channel = statusLowBits + 1;
             activeChannels[channel] = true;
-            let pedal: Pedal;
+            let pedal: PedalType;
             if (controllerNo === 64) {
                 pedal = 'sustain';
             } else if (controllerNo === 66) {
@@ -118,9 +118,9 @@ function processMessage(
 
             const pedalThreshold = 64;
             if (controllerValue >= pedalThreshold) {
-                args.onPedalPressed?.(pedal);
+                args.onPedalPressed?.(pedal, controllerValue);
             } else {
-                args.onPedalReleased?.(pedal);
+                args.onPedalReleased?.(pedal, controllerValue);
             }
             //120-127 are reserved for control mode messages
         } else if (controllerNo === 121 && controllerValue === 0) {

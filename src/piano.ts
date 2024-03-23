@@ -1,6 +1,7 @@
 import Stats from 'stats.js';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { PedalType } from './midi';
 
 const pianoHeight = 8;
 const keyDistance = 1;
@@ -39,6 +40,8 @@ const keyGeometryWhite = new THREE.BoxGeometry(
 const keyMaterialWhite = new THREE.MeshStandardMaterial({
     color: keyWhite.color,
 });
+const pedalGeometry = new THREE.BoxGeometry(0.7, 0.2, 3);
+const pedalMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff });
 
 type Key = {
     isBlack: boolean;
@@ -60,6 +63,12 @@ type KeyFlow = {
     mesh: THREE.Mesh;
 };
 
+type Pedal = {
+    x: number;
+    mesh: THREE.Object3D;
+    light: THREE.PointLight;
+};
+
 type Config = {
     numKeys: number;
     lowestMidiNote: number;
@@ -79,6 +88,11 @@ type Piano = {
     lights: Lights;
     keys: Key[];
     keyFlows: KeyFlow[];
+    pedals: {
+        soft: Pedal;
+        sostenuto: Pedal;
+        sustain: Pedal;
+    };
 
     //development helpers
     stats: Stats | null;
@@ -105,6 +119,12 @@ export function createPiano(numKeys = 88) {
         lights: createLights(scene),
         keys: createKeys(scene, config),
         keyFlows: [],
+        pedals: {
+            soft: createPedal(scene, -1),
+            sostenuto: createPedal(scene, 0),
+            sustain: createPedal(scene, 1),
+        },
+
         stats: null,
     };
 
@@ -131,8 +151,14 @@ export function createPiano(numKeys = 88) {
             keyPressed(piano, note - config.lowestMidiNote, velocity);
             startAnimation();
         },
-        keyReleased: (note: number) =>
-            keyReleased(piano, note - config.lowestMidiNote),
+        keyReleased: (note: number) => {
+            keyReleased(piano, note - config.lowestMidiNote);
+            startAnimation();
+        },
+        pedalPressed: (pedal: PedalType, value: number) => {
+            pedalPressed(piano, pedal, value);
+            startAnimation();
+        },
         animate: startAnimation,
         onWindowResize,
     };
@@ -236,6 +262,33 @@ function createKeys(scene: THREE.Scene, config: Config) {
     }
 
     return keys;
+}
+
+function createPedal(scene: THREE.Scene, x: number): Pedal {
+    const mesh = new THREE.Mesh(pedalGeometry, pedalMaterial);
+    mesh.position.x = x;
+    mesh.position.y = -pianoHeight;
+    mesh.position.z = 1.2 * pianoHeight;
+    scene.add(mesh);
+
+    const light = new THREE.PointLight(0xffffff, 0.0, 4.0);
+    light.position.set(
+        mesh.position.x,
+        mesh.position.y + 0.5,
+        mesh.position.z + 1
+    );
+    scene.add(light);
+
+    return {
+        x,
+        mesh,
+        light,
+    };
+}
+
+function pedalPressed(piano: Piano, pedalType: PedalType, value: number) {
+    const pedal = piano.pedals[pedalType];
+    pedal.light.intensity = value * 0.5;
 }
 
 const createLights = (scene: THREE.Scene): Lights => {

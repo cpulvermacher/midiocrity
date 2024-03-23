@@ -10,8 +10,16 @@ piano.animate();
 startMIDI({
     onKeyPressed: (key, velocity) => piano.keyPressed(key, velocity / 128.0),
     onKeyReleased: piano.keyReleased,
+    onInit: () => {
+        document.getElementById('loading')!.style.display = 'none';
+    },
     onInitFailure: (reason) => {
-        throw new Error(`Failed initializing MIDI: ${reason}`);
+        document.getElementById('loading')!.style.display = 'none';
+        if (reason === 'nopermissions') {
+            document.getElementById('no-permission')!.style.display = 'flex';
+        } else if (reason === 'unsupported') {
+            document.getElementById('no-webmidi')!.style.display = 'flex';
+        }
     },
 });
 

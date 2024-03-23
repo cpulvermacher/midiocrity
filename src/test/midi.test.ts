@@ -6,9 +6,10 @@ describe('startMIDI', () => {
     const args: StartMidiArgs = {
         onKeyPressed: vi.fn(),
         onKeyReleased: vi.fn(),
-        onInitFailure: vi.fn(),
         onPedalPressed: vi.fn(),
         onPedalReleased: vi.fn(),
+        onInit: vi.fn(),
+        onInitFailure: vi.fn(),
     };
 
     beforeEach(() => {

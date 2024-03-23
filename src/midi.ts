@@ -4,7 +4,8 @@ export type StartMidiArgs = {
     onKeyReleased: (key: number) => void;
     onPedalPressed?: (pedal: Pedal) => void;
     onPedalReleased?: (pedal: Pedal) => void;
-    onInitFailure?: (reason: 'unsupported' | 'nopermissions') => void;
+    onInit: () => void;
+    onInitFailure: (reason: 'unsupported' | 'nopermissions') => void;
 };
 
 export type Pedal = 'soft' | 'sostenuto' | 'sustain';
@@ -20,11 +21,14 @@ export function startMIDI(args: StartMidiArgs) {
 
     if (navigator['requestMIDIAccess']) {
         navigator.requestMIDIAccess().then(
-            (midiAccess) => onSuccess(midiAccess, args, activeChannels),
-            () => args.onInitFailure!('nopermissions')
+            (midiAccess) => {
+                onSuccess(midiAccess, args, activeChannels);
+                args.onInit();
+            },
+            () => args.onInitFailure('nopermissions')
         );
     } else {
-        args.onInitFailure!('unsupported');
+        args.onInitFailure('unsupported');
     }
 
     return { activeChannels };

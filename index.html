@@ -10,11 +10,37 @@
         body {
             margin: 0;
             padding: 0;
+            background: #000;
+            color: #bababa;
+            font-size: 1.5em;
+            font-family: sans-serif;
+        }
+        .center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+
+        @keyframes fade {
+            0% {opacity: 0;}
+            100% {opacity: 1;}
+        }
+        #loading {
+            animation: fade 2s ease-in-out infinite alternate;
+        }
+        #no-webmidi, #no-permission {
+            display: none;
         }
     </style>
 </head>
 
 <body>
+    <p class="center" id="loading">Initializing...</p>
+    <p class="center" id="no-webmidi">Your browser doesn't seem to support WebMIDI. On desktop, try Chrome or Firefox, on mobile, Chrome.</p>
+    <p class="center" id="no-permission">Please grant WebMIDI permissions to this app to accept input from MIDI devices.</p>
+
     <script type="module" src="./src/main.ts"></script>
 </body>
 

@@ -291,15 +291,15 @@ function pedalPressed(piano: Piano, pedalType: PedalType, value: number) {
     pedal.light.intensity = value * 0.5;
 }
 
-const createLights = (scene: THREE.Scene): Lights => {
+function createLights(scene: THREE.Scene): Lights {
     const ambientLight = new THREE.AmbientLight(0x404040, 1); // soft white light
     scene.add(ambientLight);
     return {
         ambientLight,
     };
-};
+}
 
-const animateLights = (keys: Key[], timestampMs: number) => {
+function animateLights(keys: Key[], timestampMs: number) {
     const currentHue = getCurrentHue(timestampMs);
     const color = new THREE.Color();
     const hsl = {} as THREE.HSL;
@@ -324,7 +324,7 @@ const animateLights = (keys: Key[], timestampMs: number) => {
         dirty = true;
     }
     return dirty;
-};
+}
 
 function getCurrentHue(timestampMs: number) {
     return Math.sin(timestampMs / 20000);

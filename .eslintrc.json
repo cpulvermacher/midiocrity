@@ -5,9 +5,7 @@
         "ecmaVersion": 6,
         "sourceType": "module"
     },
-    "plugins": [
-        "@typescript-eslint"
-    ],
+    "plugins": ["@typescript-eslint"],
     "extends": [
         "eslint:recommended",
         "plugin:@typescript-eslint/eslint-recommended",
@@ -18,19 +16,15 @@
             "warn",
             {
                 "selector": "import",
-                "format": [
-                    "camelCase",
-                    "PascalCase"
-                ]
+                "format": ["camelCase", "PascalCase"]
             }
         ],
         "@typescript-eslint/semi": "warn",
         "curly": "warn",
         "eqeqeq": "warn",
         "no-throw-literal": "warn",
-        "semi": "error"
+        "semi": "error",
+        "func-style": ["warn", "declaration"]
     },
-    "ignorePatterns": [
-        "**/*.d.ts"
-    ]
+    "ignorePatterns": ["**/*.d.ts"]
 }

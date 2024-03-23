@@ -41,8 +41,9 @@ function onSuccess(
 ) {
     const inputs = midiAccess.inputs;
 
-    const onMidiMessage = (message: Event) =>
-        processMessage(message, args, activeChannels);
+    function onMidiMessage(message: Event) {
+        return processMessage(message, args, activeChannels);
+    }
     // Attach MIDI event "midimessage" to each input
     inputs.forEach(function (input) {
         console.debug(

@@ -32,6 +32,9 @@ setInterval(() => {
                 ? 'dot-on'
                 : 'dot-off')
     );
+    const anyChannelActive = Object.values(activeChannels).some((v) => v);
+    document.getElementById('midi-info-btn')!.className =
+        'btn menu-dot-' + (anyChannelActive ? 'on' : 'off');
 }, 2000);
 
 // press 'd' to start demo

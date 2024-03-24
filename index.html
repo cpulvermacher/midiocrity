@@ -16,24 +16,29 @@
     <div class="top"> 
         <a class="btn" href="https://github.com/cpulvermacher/midiocrity">GitHub</a>
         <a class="btn" id="midi-info-btn" tabindex="0">MIDI</a>
-        <ul class="btn-popup midi-info">
-            <li id="channel-1">Channel 1</li>
-            <li id="channel-2">Channel 2</li>
-            <li id="channel-3">Channel 3</li>
-            <li id="channel-4">Channel 4</li>
-            <li id="channel-5">Channel 5</li>
-            <li id="channel-6">Channel 6</li>
-            <li id="channel-7">Channel 7</li>
-            <li id="channel-8">Channel 8</li>
-            <li id="channel-9">Channel 9</li>
-            <li id="channel-10">Channel 10</li>
-            <li id="channel-11">Channel 11</li>
-            <li id="channel-12">Channel 12</li>
-            <li id="channel-13">Channel 13</li>
-            <li id="channel-14">Channel 14</li>
-            <li id="channel-15">Channel 15</li>
-            <li id="channel-16">Channel 16</li>
-        </ul>
+        <div class="btn-popup midi-info">
+            <h3>Connected Ports</h3>
+            <ul class="midi-info__ports" id="midi-ports"></ul>
+            <h3>Active Channels</h3>
+            <ul class="midi-info__channels">
+                <li id="channel-1">Channel 1</li>
+                <li id="channel-2">Channel 2</li>
+                <li id="channel-3">Channel 3</li>
+                <li id="channel-4">Channel 4</li>
+                <li id="channel-5">Channel 5</li>
+                <li id="channel-6">Channel 6</li>
+                <li id="channel-7">Channel 7</li>
+                <li id="channel-8">Channel 8</li>
+                <li id="channel-9">Channel 9</li>
+                <li id="channel-10">Channel 10</li>
+                <li id="channel-11">Channel 11</li>
+                <li id="channel-12">Channel 12</li>
+                <li id="channel-13">Channel 13</li>
+                <li id="channel-14">Channel 14</li>
+                <li id="channel-15">Channel 15</li>
+                <li id="channel-16">Channel 16</li>
+            </ul>
+        </div>
     </div>
 
     <script type="module" src="./src/main.ts"></script>

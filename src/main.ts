@@ -7,7 +7,7 @@ const piano = createPiano(numKeys);
 window.addEventListener('resize', piano.onWindowResize);
 piano.animate();
 
-const { activeChannels } = startMIDI({
+const { status } = startMIDI({
     onKeyPressed: (key, velocity) => piano.keyPressed(key, velocity / 128.0),
     onKeyReleased: piano.keyReleased,
     onPedalPressed: (pedal, value) => piano.pedalPressed(pedal, value / 128.0),
@@ -26,15 +26,24 @@ const { activeChannels } = startMIDI({
 });
 
 setInterval(() => {
-    Object.entries(activeChannels).forEach(
+    Object.entries(status.activeChannels).forEach(
         ([id, value]) =>
             (document.getElementById(`channel-${id}`)!.className = value
                 ? 'dot-on'
                 : 'dot-off')
     );
-    const anyChannelActive = Object.values(activeChannels).some((v) => v);
+
+    const portList = document.getElementById('midi-ports')!;
+    portList.replaceChildren(
+        ...status.connectedPorts.map((port) => {
+            const listItem = document.createElement('li');
+            listItem.innerText = port;
+            return listItem;
+        })
+    );
+
     document.getElementById('midi-info-btn')!.className =
-        'btn menu-dot-' + (anyChannelActive ? 'on' : 'off');
+        'btn menu-dot-' + (status.connectedPorts.length ? 'on' : 'off');
 }, 2000);
 
 // press 'd' to start demo

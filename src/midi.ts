@@ -10,19 +10,27 @@ export type StartMidiArgs = {
 
 export type PedalType = 'soft' | 'sostenuto' | 'sustain';
 
+export type MidiStatus = {
+    connectedPorts: string[];
+    activeChannels: ActiveChannels;
+};
+
 // for each MIDI channel from 1 to 16, stores whether messages were received or not
 export type ActiveChannels = { [key: number]: boolean };
 
 export function startMIDI(args: StartMidiArgs) {
-    const activeChannels: ActiveChannels = {};
+    const status: MidiStatus = {
+        connectedPorts: [],
+        activeChannels: {},
+    };
     for (let i = 1; i <= 16; i++) {
-        activeChannels[i] = false;
+        status.activeChannels[i] = false;
     }
 
     if (navigator['requestMIDIAccess']) {
         navigator.requestMIDIAccess().then(
             (midiAccess) => {
-                onSuccess(midiAccess, args, activeChannels);
+                onSuccess(midiAccess, args, status);
                 args.onInit();
             },
             () => args.onInitFailure('nopermissions')
@@ -31,27 +39,21 @@ export function startMIDI(args: StartMidiArgs) {
         args.onInitFailure('unsupported');
     }
 
-    return { activeChannels };
+    return { status };
 }
 
 function onSuccess(
     midiAccess: MIDIAccess,
     args: StartMidiArgs,
-    activeChannels: ActiveChannels
+    status: MidiStatus
 ) {
     const inputs = midiAccess.inputs;
 
     function onMidiMessage(message: Event) {
-        return processMessage(message, args, activeChannels);
+        return processMessage(message, args, status.activeChannels);
     }
     // Attach MIDI event "midimessage" to each input
     inputs.forEach(function (input) {
-        console.debug(
-            'Found MIDI input:',
-            input.name,
-            ', state: ',
-            input.state
-        );
         input.onmidimessage = onMidiMessage;
     });
 
@@ -61,11 +63,15 @@ function onSuccess(
             return;
         }
         const port = midiEvent.port as MIDIInput;
-        console.debug('MIDI state change:', port.name, ', state: ', port.state);
+        const name = port.name ?? port.id;
         if (port.state === 'connected') {
             port.onmidimessage = onMidiMessage;
+            status.connectedPorts.push(name);
         } else {
             port.onmidimessage = null;
+            status.connectedPorts = status.connectedPorts.filter(
+                (portName) => portName !== name
+            );
         }
     };
 }

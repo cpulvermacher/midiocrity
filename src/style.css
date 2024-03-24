@@ -72,15 +72,26 @@ body {
 .midi-info {
     margin: 0;
     padding: 5px;
-    padding-left: 28px;
     position: absolute;
     top: 40px;
+    width: 200px;
     right: 0;
     background: #aaa;
     color: #000;
+    font-size: 0.8em;
+}
+.midi-info h3 {
+    font-size: 1em;
+}
+.midi-info__ports {
+    list-style-type: none;
+    padding-left: 10px;
+}
+.midi-info__channels {
+    padding-left: 28px;
     list-style-type: circle;
 }
-.midi-info li::marker {
+.midi-info__channels li::marker {
     font-size: 1.5em;
 }
 .dot-on {
@@ -91,14 +102,14 @@ body {
 }
 
 .menu-dot-on::before {
-    content: "•";
+    content: '•';
     color: #0f0;
     font-size: 1.5em;
     margin-right: 5px;
 }
 
 .menu-dot-off::before {
-    content: "◦";
+    content: '◦';
     color: #000;
     font-size: 1.5em;
     margin-right: 5px;

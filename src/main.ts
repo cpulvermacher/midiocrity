@@ -33,6 +33,12 @@ setInterval(() => {
                 : 'dot-off')
     );
 
+    const anyChannelActive = Object.values(status.activeChannels).some(
+        (v) => v
+    );
+    document.getElementById('midi-info-btn')!.className =
+        'btn menu-dot-' + (anyChannelActive ? 'on' : 'off');
+
     const portList = document.getElementById('midi-ports')!;
     portList.replaceChildren(
         ...status.connectedPorts.map((port) => {
@@ -41,9 +47,6 @@ setInterval(() => {
             return listItem;
         })
     );
-
-    document.getElementById('midi-info-btn')!.className =
-        'btn menu-dot-' + (status.connectedPorts.length ? 'on' : 'off');
 }, 2000);
 
 // press 'd' to start demo

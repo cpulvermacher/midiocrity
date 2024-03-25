@@ -5,42 +5,42 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
     <title>MIDIocrity</title>
-    <style>
-        html,
-        body {
-            margin: 0;
-            padding: 0;
-            background: #000;
-            color: #bababa;
-            font-size: 1.5em;
-            font-family: sans-serif;
-        }
-        .center {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            text-align: center;
-        }
-
-        @keyframes fade {
-            0% {opacity: 0;}
-            100% {opacity: 1;}
-        }
-        #loading {
-            animation: fade 2s ease-in-out infinite alternate;
-        }
-        #no-webmidi, #no-permission {
-            display: none;
-        }
-    </style>
-  <script type="module" crossorigin src="./assets/index-B8dRia6P.js"></script>
+  <script type="module" crossorigin src="./assets/index-Bk9MNxNw.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-BOW4hwgv.css">
 </head>
 
 <body>
     <p class="center" id="loading">Initializing...</p>
     <p class="center" id="no-webmidi">It appears your browser doesn't support WebMIDI. For the best experience, please use Chrome or Firefox on desktop, or Chrome on mobile devices.</p>
     <p class="center" id="no-permission">Please grant WebMIDI permissions to this app to accept input from MIDI devices.</p>
+
+    <div class="top"> 
+        <a class="btn" href="https://github.com/cpulvermacher/midiocrity">GitHub</a>
+        <a class="btn" id="midi-info-btn" tabindex="0">MIDI</a>
+        <div class="btn-popup midi-info">
+            <h3>Connected Ports</h3>
+            <ul class="midi-info__ports" id="midi-ports"></ul>
+            <h3>Active Channels</h3>
+            <ul class="midi-info__channels">
+                <li id="channel-1">Channel 1</li>
+                <li id="channel-2">Channel 2</li>
+                <li id="channel-3">Channel 3</li>
+                <li id="channel-4">Channel 4</li>
+                <li id="channel-5">Channel 5</li>
+                <li id="channel-6">Channel 6</li>
+                <li id="channel-7">Channel 7</li>
+                <li id="channel-8">Channel 8</li>
+                <li id="channel-9">Channel 9</li>
+                <li id="channel-10">Channel 10</li>
+                <li id="channel-11">Channel 11</li>
+                <li id="channel-12">Channel 12</li>
+                <li id="channel-13">Channel 13</li>
+                <li id="channel-14">Channel 14</li>
+                <li id="channel-15">Channel 15</li>
+                <li id="channel-16">Channel 16</li>
+            </ul>
+        </div>
+    </div>
 
 </body>
 

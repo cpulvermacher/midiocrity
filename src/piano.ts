@@ -1,6 +1,9 @@
 import Stats from 'stats.js';
 import * as THREE from 'three';
+import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
+import { FontLoader } from 'three/addons/loaders/FontLoader.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { codeToCharMap } from './keyboard';
 import { PedalType } from './midi';
 
 const pianoHeight = 8;
@@ -75,6 +78,10 @@ type Config = {
     keyOffset: number;
 };
 
+export type RuntimeConfig = {
+    showKeyMapping: boolean;
+};
+
 type Piano = {
     config: Config;
     animationRunning: boolean;
@@ -88,6 +95,11 @@ type Piano = {
     lights: Lights;
     keys: Key[];
     keyFlows: KeyFlow[];
+    keyboardMappingOverlay: THREE.Mesh<
+        TextGeometry,
+        THREE.MeshBasicMaterial,
+        THREE.Object3DEventMap
+    >[];
     pedals: {
         soft: Pedal;
         sostenuto: Pedal;
@@ -98,7 +110,7 @@ type Piano = {
     stats: Stats | null;
 };
 
-export function createPiano(numKeys = 88) {
+export function createPiano(numKeys = 88, keyMap?: { [key: string]: number }) {
     const config: Config = {
         numKeys: numKeys,
         lowestMidiNote: getLowestMidiNote(numKeys), // needed for translating MIDI note range of e.g. 21 - 108 for 88-key piano to 0 based index
@@ -108,6 +120,7 @@ export function createPiano(numKeys = 88) {
     const scene = createScene();
     const camera = createCamera();
     const renderer = createRenderer();
+    const keys = createKeys(scene, config);
     const piano: Piano = {
         config,
         animationRunning: false,
@@ -117,8 +130,9 @@ export function createPiano(numKeys = 88) {
         renderer,
 
         lights: createLights(scene),
-        keys: createKeys(scene, config),
+        keys,
         keyFlows: [],
+        keyboardMappingOverlay: [],
         pedals: {
             soft: createPedal(scene, -1),
             sostenuto: createPedal(scene, 0),
@@ -146,6 +160,23 @@ export function createPiano(numKeys = 88) {
         startAnimation();
     }
 
+    function configUpdated(newConfig?: RuntimeConfig) {
+        if (newConfig?.showKeyMapping) {
+            piano.keyboardMappingOverlay = createKeyMappingOverlay(
+                piano,
+                keyMap
+            );
+        } else {
+            piano.keyboardMappingOverlay.forEach((mesh) => {
+                piano.scene.remove(mesh);
+            });
+            piano.keyboardMappingOverlay = [];
+            startAnimation();
+        }
+    }
+
+    configUpdated();
+
     return {
         keyPressed: (note: number, velocity: number) => {
             keyPressed(piano, note - config.lowestMidiNote, velocity);
@@ -161,6 +192,7 @@ export function createPiano(numKeys = 88) {
         },
         animate: startAnimation,
         onWindowResize,
+        configUpdated,
     };
 }
 
@@ -192,7 +224,7 @@ function createScene() {
 
     const floorGeometry = new THREE.BoxGeometry(2000, 0.1, 2000);
     const floorMaterial = new THREE.MeshStandardMaterial({
-        color: 0xbcbcbc,
+        color: 0x000000,
         roughness: 0.2,
         metalness: 0.1,
     });
@@ -292,7 +324,7 @@ function pedalPressed(piano: Piano, pedalType: PedalType, value: number) {
 }
 
 function createLights(scene: THREE.Scene): Lights {
-    const ambientLight = new THREE.AmbientLight(0x404040, 1); // soft white light
+    const ambientLight = new THREE.AmbientLight(0x404040, 2); // soft white light
     scene.add(ambientLight);
     return {
         ambientLight,
@@ -490,4 +522,59 @@ function addDebugHelpers(piano: Piano) {
 
     piano.stats = stats;
     return { gridHelper, orbitControls, stats };
+}
+
+function createKeyMappingOverlay(
+    piano: Piano,
+    keyMap: { [key: string]: number } | undefined
+) {
+    if (!keyMap) {
+        return [];
+    }
+
+    const meshes: THREE.Mesh<
+        TextGeometry,
+        THREE.MeshBasicMaterial,
+        THREE.Object3DEventMap
+    >[] = [];
+    const material = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const loader = new FontLoader();
+    loader.load('src/helvetiker_regular.typeface.json', function (font) {
+        for (const [code, note] of Object.entries(keyMap)) {
+            const text = codeToCharMap[code] ?? code;
+
+            const geometry = new TextGeometry(text, {
+                font,
+                size: 0.3,
+                depth: 0.001,
+                curveSegments: 12,
+                bevelEnabled: true,
+                bevelThickness: 0.01,
+                bevelSize: 0.01,
+                bevelOffset: 0,
+                bevelSegments: 5,
+            });
+            geometry.computeBoundingBox();
+            geometry.center();
+
+            const mesh = new THREE.Mesh(geometry, material);
+
+            const x = piano.keys[note - piano.config.lowestMidiNote].x;
+            const isBlack =
+                piano.keys[note - piano.config.lowestMidiNote].isBlack;
+            mesh.position.set(
+                x,
+                1 - (isBlack ? keyBlack.height : keyWhite.height),
+                0.5
+            );
+
+            piano.scene.add(mesh);
+            meshes.push(mesh);
+        }
+        //start animation
+        if (!piano.animationRunning) {
+            animate(piano);
+        }
+    });
+    return meshes;
 }

@@ -62,25 +62,28 @@ body {
 .btn:focus {
     background-color: #ccc;
 }
-.btn-popup {
-    display: none;
-}
-.btn:focus + .btn-popup {
-    display: block;
-}
-
-.midi-info {
-    margin: 0;
-    padding: 5px;
+.popup {
+    width: 255px;
     position: absolute;
     top: 40px;
-    width: 200px;
     right: 0;
     background: #aaa;
     color: #000;
     font-size: 0.8em;
 }
-.midi-info h3 {
+
+.btn-popup[hidden='true'] {
+    display: none;
+}
+.btn-popup[hidden='false'] {
+    display: block;
+}
+
+.btn-popup {
+    margin: 0;
+    padding: 5px;
+}
+.btn-popup h3 {
     font-size: 1em;
 }
 .midi-info__ports {

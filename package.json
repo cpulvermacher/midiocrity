@@ -23,6 +23,7 @@
         "vitest": "^1.4.0"
     },
     "dependencies": {
+        "lil-gui": "^0.19.2",
         "three": "^0.163.0"
     }
 }

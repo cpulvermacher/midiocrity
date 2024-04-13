@@ -11,8 +11,8 @@ export type StartMidiArgs = {
 export type PedalType = 'soft' | 'sostenuto' | 'sustain';
 
 export type MidiStatus = {
-    connectedPorts: string[];
-    activeChannels: ActiveChannels;
+    connectedInputPorts: string[];
+    activeInputChannels: ActiveChannels;
 };
 
 // for each MIDI channel from 1 to 16, stores whether messages were received or not
@@ -20,17 +20,19 @@ export type ActiveChannels = { [key: number]: boolean };
 
 export function startMIDI(args: StartMidiArgs) {
     const status: MidiStatus = {
-        connectedPorts: [],
-        activeChannels: {},
+        connectedInputPorts: [],
+        activeInputChannels: {},
     };
     for (let i = 1; i <= 16; i++) {
-        status.activeChannels[i] = false;
+        status.activeInputChannels[i] = false;
     }
+    let access: MIDIAccess | null = null;
 
     if (navigator['requestMIDIAccess']) {
         navigator.requestMIDIAccess().then(
             (midiAccess) => {
                 onSuccess(midiAccess, args, status);
+                access = midiAccess;
                 args.onInit();
             },
             () => args.onInitFailure('nopermissions')
@@ -39,7 +41,17 @@ export function startMIDI(args: StartMidiArgs) {
         args.onInitFailure('unsupported');
     }
 
-    return { status };
+    return {
+        status,
+        sendKeyPress: (key: number) =>
+            access?.outputs.forEach((port) =>
+                port.send([0x90, key, 0.5 * 127])
+            ),
+        sendKeyRelease: (key: number) =>
+            access?.outputs.forEach((port) =>
+                port.send([0x80, key, 0.5 * 127])
+            ),
+    };
 }
 
 function onSuccess(
@@ -50,7 +62,7 @@ function onSuccess(
     const inputs = midiAccess.inputs;
 
     function onMidiMessage(message: Event) {
-        return processMessage(message, args, status.activeChannels);
+        return processMessage(message, args, status.activeInputChannels);
     }
     // Attach MIDI event "midimessage" to each input
     inputs.forEach(function (input) {
@@ -66,10 +78,10 @@ function onSuccess(
         const name = port.name ?? port.id;
         if (port.state === 'connected') {
             port.onmidimessage = onMidiMessage;
-            status.connectedPorts.push(name);
+            status.connectedInputPorts.push(name);
         } else {
             port.onmidimessage = null;
-            status.connectedPorts = status.connectedPorts.filter(
+            status.connectedInputPorts = status.connectedInputPorts.filter(
                 (portName) => portName !== name
             );
         }

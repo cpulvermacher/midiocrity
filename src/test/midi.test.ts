@@ -52,7 +52,7 @@ describe('startMIDI', () => {
 
         const { status } = startMIDI(args);
 
-        expect(typeof status.activeChannels).toBe('object');
+        expect(typeof status.activeInputChannels).toBe('object');
     });
 
     it('should attach onMidiMessage to each input', async () => {
@@ -167,7 +167,7 @@ describe('startMIDI', () => {
                 expect(args.onKeyPressed).toHaveBeenCalledWith(60, 100);
 
                 for (let i = 1; i <= 16; i++) {
-                    expect(status.activeChannels[i], `channel ${i}`).toBe(
+                    expect(status.activeInputChannels[i], `channel ${i}`).toBe(
                         i === channel
                     );
                 }
@@ -181,7 +181,7 @@ describe('startMIDI', () => {
                 expect(args.onKeyReleased).toHaveBeenCalledWith(60);
 
                 for (let i = 1; i <= 16; i++) {
-                    expect(status.activeChannels[i], `channel ${i}`).toBe(
+                    expect(status.activeInputChannels[i], `channel ${i}`).toBe(
                         i === channel
                     );
                 }
@@ -198,7 +198,7 @@ describe('startMIDI', () => {
                 );
 
                 for (let i = 1; i <= 16; i++) {
-                    expect(status.activeChannels[i], `channel ${i}`).toBe(
+                    expect(status.activeInputChannels[i], `channel ${i}`).toBe(
                         i === channel
                     );
                 }
@@ -212,7 +212,7 @@ describe('startMIDI', () => {
                 expect(args.onPedalReleased).toHaveBeenCalledWith('sustain', 0);
 
                 for (let i = 1; i <= 16; i++) {
-                    expect(status.activeChannels[i], `channel ${i}`).toBe(
+                    expect(status.activeInputChannels[i], `channel ${i}`).toBe(
                         i === channel
                     );
                 }
@@ -229,7 +229,7 @@ describe('startMIDI', () => {
                 );
 
                 for (let i = 1; i <= 16; i++) {
-                    expect(status.activeChannels[i], `channel ${i}`).toBe(
+                    expect(status.activeInputChannels[i], `channel ${i}`).toBe(
                         i === channel
                     );
                 }
@@ -246,7 +246,7 @@ describe('startMIDI', () => {
                 );
 
                 for (let i = 1; i <= 16; i++) {
-                    expect(status.activeChannels[i], `channel ${i}`).toBe(
+                    expect(status.activeInputChannels[i], `channel ${i}`).toBe(
                         i === channel
                     );
                 }
@@ -260,7 +260,7 @@ describe('startMIDI', () => {
                 expect(args.onPedalPressed).toHaveBeenCalledWith('soft', 127);
 
                 for (let i = 1; i <= 16; i++) {
-                    expect(status.activeChannels[i], `channel ${i}`).toBe(
+                    expect(status.activeInputChannels[i], `channel ${i}`).toBe(
                         i === channel
                     );
                 }
@@ -274,7 +274,7 @@ describe('startMIDI', () => {
                 expect(args.onPedalReleased).toHaveBeenCalledWith('soft', 0);
 
                 for (let i = 1; i <= 16; i++) {
-                    expect(status.activeChannels[i], `channel ${i}`).toBe(
+                    expect(status.activeInputChannels[i], `channel ${i}`).toBe(
                         i === channel
                     );
                 }

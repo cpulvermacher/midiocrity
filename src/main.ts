@@ -18,7 +18,7 @@ const config = {
     },
     synthExtra: synth.config,
     keyboard: {
-        midiOutput: true,
+        midiOutput: false,
         showKeys: false,
     },
     killSwitch: () => {

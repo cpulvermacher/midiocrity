@@ -5,14 +5,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
     <title>MIDIocrity</title>
-  <script type="module" crossorigin src="./assets/index-efdP9gk8.js"></script>
+  <script type="module" crossorigin src="./assets/index-BgYI1Thl.js"></script>
   <link rel="stylesheet" crossorigin href="./assets/index-pSLiN2Fn.css">
 </head>
 
 <body>
     <p class="center" id="loading">Initializing...</p>
-    <p class="center" id="no-webmidi">It appears your browser doesn't support WebMIDI. For the best experience, please use Chrome or Firefox on desktop, or Chrome on mobile devices.</p>
-    <p class="center" id="no-permission">Please grant WebMIDI permissions to this app to accept input from MIDI devices.</p>
 
     <div class="top"> 
         <a class="btn" href="https://github.com/cpulvermacher/midiocrity">GitHub</a>
@@ -23,6 +21,8 @@
                 <div id="gui"></div>
             </div>
             <div class="btn-popup midi-info" id="midi-popup" hidden>
+                <p id="no-webmidi">It appears your browser doesn't support WebMIDI. For the best experience, please use Chrome or Firefox.</p>
+                <p id="no-permission">Please grant WebMIDI permissions to this app to accept input from MIDI devices.</p>
                 <h3>Connected Input Ports</h3>
                 <ul class="midi-info__ports" id="midi-ports"></ul>
                 <h3>Active Channels</h3>

@@ -22,7 +22,7 @@ const config = {
         showKeys: false,
     },
     killSwitch: () => {
-        for (let i = 0; i < numKeys; i++) {
+        for (let i = 0; i < 127; i++) {
             synth.keyReleased(i);
             piano.keyReleased(i);
         }

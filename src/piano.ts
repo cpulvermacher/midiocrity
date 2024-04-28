@@ -539,7 +539,7 @@ function createKeyMappingOverlay(
     >[] = [];
     const material = new THREE.MeshBasicMaterial({ color: 0xffffff });
     const loader = new FontLoader();
-    loader.load('src/helvetiker_regular.typeface.json', function (font) {
+    loader.load('helvetiker_regular.typeface.json', function (font) {
         for (const [code, note] of Object.entries(keyMap)) {
             const text = codeToCharMap[code] ?? code;
 

@@ -3,6 +3,17 @@ import { createKeyMap } from './keyboard';
 import { Piano } from './piano';
 import { Synthesizer } from './synth';
 
+const firstBottomKey = 36;
+const firstTopKey = 60;
+const firstKeyOptions = {
+    C1: 24,
+    C2: 36,
+    C3: 48,
+    'C4 (middle C)': 60,
+    C5: 72,
+    C6: 84,
+};
+
 export function createSettings(
     container: HTMLElement,
     synth: Synthesizer,
@@ -22,7 +33,9 @@ export function createSettings(
         keyboard: {
             midiOutput: false,
             showKeys: false,
-            keyMap: createKeyMap(),
+            firstBottomKey,
+            firstTopKey,
+            keyMap: createKeyMap(firstBottomKey, firstTopKey),
         },
         killSwitch: killSwitch,
     };
@@ -52,6 +65,33 @@ export function createSettings(
         .onChange((value: boolean) => {
             piano.configUpdated({
                 showKeys: value,
+                keyMap: config.keyboard.keyMap,
+            });
+        });
+    guiKeyboard
+        .add(config.keyboard, 'firstBottomKey', firstKeyOptions)
+        .name('Bottom Row Start')
+        .onChange((value: number) => {
+            config.keyboard.keyMap = createKeyMap(
+                value,
+                config.keyboard.firstTopKey
+            );
+            piano.configUpdated({
+                showKeys: config.keyboard.showKeys,
+                keyMap: config.keyboard.keyMap,
+            });
+        });
+
+    guiKeyboard
+        .add(config.keyboard, 'firstTopKey', firstKeyOptions)
+        .name('Top Row Start')
+        .onChange((value: number) => {
+            config.keyboard.keyMap = createKeyMap(
+                config.keyboard.firstBottomKey,
+                value
+            );
+            piano.configUpdated({
+                showKeys: config.keyboard.showKeys,
                 keyMap: config.keyboard.keyMap,
             });
         });

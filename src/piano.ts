@@ -547,6 +547,7 @@ function createKeyMappingOverlay(piano: PianoState, keyMap: KeyMap) {
     const material = new THREE.MeshBasicMaterial({ color: 0xffffff });
     const loader = new FontLoader();
     loader.load('helvetiker_regular.typeface.json', function (font) {
+        const usedNotes: { [key: number]: number } = {};
         for (const [code, note] of Object.entries(keyMap)) {
             const text = codeToCharMap[code] ?? code;
 
@@ -566,19 +567,23 @@ function createKeyMappingOverlay(piano: PianoState, keyMap: KeyMap) {
 
             const mesh = new THREE.Mesh(geometry, material);
 
-            const x = piano.keys[note - piano.config.lowestMidiNote].x;
+            const numUsed = usedNotes[note] ?? 0;
+            usedNotes[note] = numUsed + 1;
             const isBlack =
                 piano.keys[note - piano.config.lowestMidiNote].isBlack;
-            mesh.position.set(
-                x,
-                1 - (isBlack ? keyBlack.height : keyWhite.height),
-                0.5
-            );
+
+            const x = piano.keys[note - piano.config.lowestMidiNote].x;
+            const y =
+                1 -
+                (isBlack ? keyBlack.height : keyWhite.height) +
+                numUsed * 0.7;
+            mesh.position.set(x, y, 0.5);
 
             piano.scene.add(mesh);
             meshes.push(mesh);
         }
-        //start animation
+
+        //start animation (needs to happen inside load() callback after meshes are added)
         if (!piano.animationRunning) {
             animate(piano);
         }

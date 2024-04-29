@@ -82,7 +82,7 @@ export type RuntimeConfig = {
     showKeyMapping: boolean;
 };
 
-type Piano = {
+type PianoState = {
     config: Config;
     animationRunning: boolean;
 
@@ -110,7 +110,19 @@ type Piano = {
     stats: Stats | null;
 };
 
-export function createPiano(numKeys = 88, keyMap?: { [key: string]: number }) {
+export type Piano = {
+    keyPressed: (note: number, velocity: number) => void;
+    keyReleased: (note: number) => void;
+    pedalPressed: (pedal: PedalType, value: number) => void;
+    animate: () => void;
+    onWindowResize: () => void;
+    configUpdated: (newConfig?: RuntimeConfig) => void;
+};
+
+export function createPiano(
+    numKeys = 88,
+    keyMap?: { [key: string]: number }
+): Piano {
     const config: Config = {
         numKeys: numKeys,
         lowestMidiNote: getLowestMidiNote(numKeys), // needed for translating MIDI note range of e.g. 21 - 108 for 88-key piano to 0 based index
@@ -121,7 +133,7 @@ export function createPiano(numKeys = 88, keyMap?: { [key: string]: number }) {
     const camera = createCamera();
     const renderer = createRenderer();
     const keys = createKeys(scene, config);
-    const piano: Piano = {
+    const piano: PianoState = {
         config,
         animationRunning: false,
 
@@ -318,7 +330,7 @@ function createPedal(scene: THREE.Scene, x: number): Pedal {
     };
 }
 
-function pedalPressed(piano: Piano, pedalType: PedalType, value: number) {
+function pedalPressed(piano: PianoState, pedalType: PedalType, value: number) {
     const pedal = piano.pedals[pedalType];
     pedal.light.intensity = value * 0.5;
 }
@@ -396,7 +408,7 @@ function animateKeyFlow(
     return dirty;
 }
 
-function keyPressed(piano: Piano, keyIndex: number, velocity: number) {
+function keyPressed(piano: PianoState, keyIndex: number, velocity: number) {
     if (keyIndex < 0 || keyIndex >= piano.config.numKeys) {
         console.error('Invalid key index', keyIndex);
         return;
@@ -449,7 +461,7 @@ function keyPressed(piano: Piano, keyIndex: number, velocity: number) {
     key.pressedTimestamp = pressedTimestamp;
 }
 
-function keyReleased(piano: Piano, keyIndex: number) {
+function keyReleased(piano: PianoState, keyIndex: number) {
     if (keyIndex < 0 || keyIndex >= piano.config.numKeys) {
         console.error('Invalid key index', keyIndex);
         return;
@@ -469,7 +481,7 @@ function keyReleased(piano: Piano, keyIndex: number) {
     }
 }
 
-function animate(piano: Piano, timestampMs: number = 0) {
+function animate(piano: PianoState, timestampMs: number = 0) {
     piano.stats?.begin();
     const lightsDirty = animateLights(piano.keys, timestampMs);
     const keyFlowDirty = animateKeyFlow(
@@ -488,7 +500,7 @@ function animate(piano: Piano, timestampMs: number = 0) {
     }
 }
 
-function animateCameraToFitScreen(piano: Piano) {
+function animateCameraToFitScreen(piano: PianoState) {
     const cameraPosition = new THREE.Vector3();
     piano.camera.getWorldPosition(cameraPosition);
     const viewSize = new THREE.Vector2();
@@ -504,7 +516,7 @@ function animateCameraToFitScreen(piano: Piano) {
 }
 
 /** add FPS graph and scene navigation (removed in production build) */
-function addDebugHelpers(piano: Piano) {
+function addDebugHelpers(piano: PianoState) {
     const gridHelper = new THREE.GridHelper(100, 100);
     gridHelper.rotation.x = Math.PI / 2; // Rotate the gridHelper 90 degrees
     // piano.scene.add(gridHelper);
@@ -525,7 +537,7 @@ function addDebugHelpers(piano: Piano) {
 }
 
 function createKeyMappingOverlay(
-    piano: Piano,
+    piano: PianoState,
     keyMap: { [key: string]: number } | undefined
 ) {
     if (!keyMap) {

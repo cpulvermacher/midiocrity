@@ -1,4 +1,4 @@
-type SynthesizerConfig = {
+export type SynthesizerConfig = {
     maxGain: number;
     numOscillators: number;
     oscillatorType: OscillatorType;
@@ -8,7 +8,13 @@ type SynthesizerConfig = {
     sustainDurationSeconds: number;
 };
 
-export function startSynthesizer(context = new AudioContext()) {
+export type Synthesizer = {
+    keyPressed: (note: number) => void;
+    keyReleased: (note: number) => void;
+    config: SynthesizerConfig;
+};
+
+export function startSynthesizer(context = new AudioContext()): Synthesizer {
     const config: SynthesizerConfig = {
         maxGain: 0.4,
         numOscillators: 3,

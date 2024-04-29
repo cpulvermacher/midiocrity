@@ -1,61 +1,17 @@
-import GUI from 'lil-gui';
 import { keyMap } from './keyboard';
 import { startMIDI } from './midi';
 import { createPiano } from './piano';
+import { createSettings } from './settings';
 import { startSynthesizer } from './synth';
 
 const numKeys = 88;
 
 const piano = createPiano(numKeys, keyMap);
+const synth = startSynthesizer();
+const config = createSettings(document.getElementById('gui')!, synth, piano);
+
 window.addEventListener('resize', piano.onWindowResize);
 piano.animate();
-
-const synth = startSynthesizer();
-
-const config = {
-    synth: {
-        midiInput: true,
-    },
-    synthExtra: synth.config,
-    keyboard: {
-        midiOutput: false,
-        showKeys: false,
-    },
-    killSwitch: () => {
-        for (let i = 0; i < 127; i++) {
-            synth.keyReleased(i);
-            piano.keyReleased(i);
-        }
-    },
-};
-
-const gui = new GUI({ container: document.getElementById('gui')! });
-gui.add(config.synth, 'midiInput').name('Play Sound on MIDI Input');
-const guiSynth = gui.addFolder('Synthesizer Details');
-guiSynth.close();
-guiSynth.add(config.synthExtra, 'maxGain', 0, 1);
-guiSynth.add(config.synthExtra, 'numOscillators', 1, 40, 1);
-guiSynth.add(config.synthExtra, 'oscillatorType', [
-    'sawtooth',
-    'sine',
-    'square',
-    'triangle',
-]);
-guiSynth.add(config.synthExtra, 'detuneMultiplier', 0, 100);
-guiSynth.add(config.synthExtra, 'fadeInTimeSeconds', 0, 5);
-guiSynth.add(config.synthExtra, 'fadeOutTimeSeconds', 0, 5);
-guiSynth.add(config.synthExtra, 'sustainDurationSeconds', 0, 5);
-
-const guiKeyboard = gui.addFolder('Keyboard');
-guiKeyboard.add(config.keyboard, 'midiOutput').name('Send MIDI Output');
-guiKeyboard
-    .add(config.keyboard, 'showKeys')
-    .name('Show Keys')
-    .onChange((value: boolean) =>
-        piano.configUpdated({ showKeyMapping: value })
-    );
-
-gui.add(config, 'killSwitch').name('Release all keys');
 
 const { status, sendKeyPress, sendKeyRelease } = startMIDI({
     onKeyPressed: (key, velocity) => {

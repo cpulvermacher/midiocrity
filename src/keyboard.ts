@@ -1,4 +1,27 @@
-// KeyboardEvent.code should be layout independent, but isn't on Firefox
+/** a map of KeyboardEvent.code to a note number
+ * Note: KeyboardEvent.code should be layout independent, but isn't on Firefox.
+ */
+export type KeyMap = {
+    [key: string]: number;
+};
+
+export function createKeyMap(
+    firstBottomKey: number = 36,
+    firstTopKey: number = 60
+): KeyMap {
+    return {
+        ...toKeyMap(keysBottom, firstBottomKey),
+        ...toKeyMap(keysTop, firstTopKey),
+    };
+}
+
+function toKeyMap(keys: string[], startValue: number) {
+    return keys.reduce((obj, key, index) => {
+        obj[key] = startValue + index;
+        return obj;
+    }, {} as KeyMap);
+}
+
 const keysTop = [
     'KeyQ',
     'Digit2',
@@ -40,20 +63,6 @@ const keysBottom = [
     'Slash',
 ];
 
-export const keyMap: { [key: string]: number } = {
-    ...toKeyMap(keysBottom, 36),
-    ...toKeyMap(keysTop, 60),
-};
-
-function toKeyMap(keys: string[], startValue: number) {
-    return keys.reduce(
-        (obj, key, index) => {
-            obj[key] = startValue + index;
-            return obj;
-        },
-        {} as { [key: string]: number }
-    );
-}
 export const codeToCharMap: { [code: string]: string } = {
     BracketLeft: '[',
     Comma: ',',

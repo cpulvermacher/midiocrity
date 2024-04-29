@@ -1,4 +1,5 @@
 import GUI from 'lil-gui';
+import { createKeyMap } from './keyboard';
 import { Piano } from './piano';
 import { Synthesizer } from './synth';
 
@@ -21,6 +22,7 @@ export function createSettings(
         keyboard: {
             midiOutput: false,
             showKeys: false,
+            keyMap: createKeyMap(),
         },
         killSwitch: killSwitch,
     };
@@ -47,9 +49,12 @@ export function createSettings(
     guiKeyboard
         .add(config.keyboard, 'showKeys')
         .name('Show Keys')
-        .onChange((value: boolean) =>
-            piano.configUpdated({ showKeyMapping: value })
-        );
+        .onChange((value: boolean) => {
+            piano.configUpdated({
+                showKeys: value,
+                keyMap: config.keyboard.keyMap,
+            });
+        });
 
     gui.add(config, 'killSwitch').name('Release all keys');
     return config;

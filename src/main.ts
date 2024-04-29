@@ -1,12 +1,9 @@
-import { keyMap } from './keyboard';
 import { startMIDI } from './midi';
 import { createPiano } from './piano';
 import { createSettings } from './settings';
 import { startSynthesizer } from './synth';
 
-const numKeys = 88;
-
-const piano = createPiano(numKeys, keyMap);
+const piano = createPiano();
 const synth = startSynthesizer();
 const config = createSettings(document.getElementById('gui')!, synth, piano);
 
@@ -83,7 +80,7 @@ window.addEventListener('keydown', function (event) {
                 piano.keyPressed(pressedKey, 0.5);
                 synth.keyPressed(pressedKey);
                 lastDemoKey++;
-                if (lastDemoKey >= numKeys) {
+                if (lastDemoKey >= 88) {
                     lastDemoKey = 0;
                 }
                 setTimeout(() => {
@@ -93,8 +90,8 @@ window.addEventListener('keydown', function (event) {
             }, 20);
         }
     } else {
-        if (event.code in keyMap) {
-            const key = keyMap[event.code];
+        if (config.keyboard.keyMap && event.code in config.keyboard.keyMap) {
+            const key = config.keyboard.keyMap[event.code];
             synth.keyPressed(key);
             if (config.keyboard.midiOutput) {
                 sendKeyPress(key);
@@ -106,8 +103,8 @@ window.addEventListener('keydown', function (event) {
 });
 
 window.addEventListener('keyup', function (event) {
-    if (event.code in keyMap) {
-        const key = keyMap[event.code];
+    if (config.keyboard.keyMap && event.code in config.keyboard.keyMap) {
+        const key = config.keyboard.keyMap[event.code];
         synth.keyReleased(key);
         if (config.keyboard.midiOutput) {
             sendKeyRelease(key);

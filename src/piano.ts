@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
 import { FontLoader } from 'three/addons/loaders/FontLoader.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { codeToCharMap } from './keyboard';
+import { KeyMap, codeToCharMap } from './keyboard';
 import { PedalType } from './midi';
 
 const pianoHeight = 8;
@@ -79,7 +79,8 @@ type Config = {
 };
 
 export type RuntimeConfig = {
-    showKeyMapping: boolean;
+    showKeys: boolean;
+    keyMap: KeyMap;
 };
 
 type PianoState = {
@@ -119,10 +120,7 @@ export type Piano = {
     configUpdated: (newConfig?: RuntimeConfig) => void;
 };
 
-export function createPiano(
-    numKeys = 88,
-    keyMap?: { [key: string]: number }
-): Piano {
+export function createPiano(numKeys = 88): Piano {
     const config: Config = {
         numKeys: numKeys,
         lowestMidiNote: getLowestMidiNote(numKeys), // needed for translating MIDI note range of e.g. 21 - 108 for 88-key piano to 0 based index
@@ -173,16 +171,16 @@ export function createPiano(
     }
 
     function configUpdated(newConfig?: RuntimeConfig) {
-        if (newConfig?.showKeyMapping) {
+        piano.keyboardMappingOverlay.forEach((mesh) => {
+            piano.scene.remove(mesh);
+        });
+        piano.keyboardMappingOverlay = [];
+        if (newConfig?.showKeys) {
             piano.keyboardMappingOverlay = createKeyMappingOverlay(
                 piano,
-                keyMap
+                newConfig.keyMap
             );
         } else {
-            piano.keyboardMappingOverlay.forEach((mesh) => {
-                piano.scene.remove(mesh);
-            });
-            piano.keyboardMappingOverlay = [];
             startAnimation();
         }
     }
@@ -536,10 +534,7 @@ function addDebugHelpers(piano: PianoState) {
     return { gridHelper, orbitControls, stats };
 }
 
-function createKeyMappingOverlay(
-    piano: PianoState,
-    keyMap: { [key: string]: number } | undefined
-) {
+function createKeyMappingOverlay(piano: PianoState, keyMap: KeyMap) {
     if (!keyMap) {
         return [];
     }

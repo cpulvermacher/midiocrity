@@ -13,6 +13,7 @@ const firstKeyOptions = {
     C5: 72,
     C6: 84,
 };
+const oscillatorOptions = ['sawtooth', 'sine', 'square', 'triangle'];
 
 export function createSettings(
     container: HTMLElement,
@@ -47,12 +48,7 @@ export function createSettings(
     synthesizer.close();
     synthesizer.add(config.synthExtra, 'maxGain', 0, 1);
     synthesizer.add(config.synthExtra, 'numOscillators', 1, 40, 1);
-    synthesizer.add(config.synthExtra, 'oscillatorType', [
-        'sawtooth',
-        'sine',
-        'square',
-        'triangle',
-    ]);
+    synthesizer.add(config.synthExtra, 'oscillatorType', oscillatorOptions);
     synthesizer.add(config.synthExtra, 'detuneMultiplier', 0, 100);
     const envelope = synthesizer.addFolder('Envelope');
     envelope.add(config.synthExtra, 'attackSeconds', 0, 5);

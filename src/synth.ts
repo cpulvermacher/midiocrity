@@ -1,3 +1,5 @@
+const silenceGain = 0.0001; // avoid zero for exponential ramp
+
 export type SynthesizerConfig = {
     maxGain: number;
     numOscillators: number;
@@ -102,7 +104,7 @@ function startOscillators(
     );
     if (config.sustainLevel < 1) {
         gainNode.gain.exponentialRampToValueAtTime(
-            config.sustainLevel * maxLevel || 0.0001,
+            config.sustainLevel * maxLevel || silenceGain,
             context.currentTime + config.attackSeconds + config.decaySeconds
         );
     }
@@ -121,8 +123,8 @@ function stopOscillators(
 ) {
     const endTime = context.currentTime + config.releaseSeconds;
     oscillator.gainNode.gain.cancelScheduledValues(0);
-    const currentValue = Math.max(oscillator.gainNode.gain.value, 0.0001);
+    const currentValue = Math.max(oscillator.gainNode.gain.value, silenceGain);
     oscillator.gainNode.gain.setValueAtTime(currentValue, context.currentTime);
-    oscillator.gainNode.gain.exponentialRampToValueAtTime(0.0001, endTime);
+    oscillator.gainNode.gain.exponentialRampToValueAtTime(silenceGain, endTime);
     oscillator.oscillators.forEach((oscillator) => oscillator.stop(endTime));
 }

@@ -57,12 +57,11 @@ export function createSettings(
     envelope.add(config.synthExtra, 'releaseSeconds', 0, 5);
     envelope.close();
 
-    const compressor = synthesizer.addFolder('Compressor');
-    addAudioParam(compressor, config.synthExtra.compressor, 'threshold');
-    addAudioParam(compressor, config.synthExtra.compressor, 'knee');
-    addAudioParam(compressor, config.synthExtra.compressor, 'ratio');
-    addAudioParam(compressor, config.synthExtra.compressor, 'attack');
-    addAudioParam(compressor, config.synthExtra.compressor, 'release');
+    const compressor = addAudioNode(
+        synthesizer,
+        config.synthExtra.compressor,
+        'Compressor'
+    );
     compressor.close();
 
     const keyboard = gui.addFolder('Keyboard');
@@ -124,4 +123,18 @@ function addAudioParam<T extends object>(
         set: (value: number) => (param.value = value),
     });
     return gui.add(obj, String(key), param.minValue, param.maxValue, step);
+}
+
+function addAudioNode(synthesizer: GUI, node: AudioNode, name: string) {
+    const properties = Object.getOwnPropertyNames(
+        Object.getPrototypeOf(node)
+    ) as (keyof AudioNode)[];
+
+    const controller = synthesizer.addFolder(name);
+    for (const key of properties) {
+        if (node[key] instanceof AudioParam) {
+            addAudioParam(controller, node, key);
+        }
+    }
+    return controller;
 }

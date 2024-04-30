@@ -1,4 +1,4 @@
-import GUI from 'lil-gui';
+import GUI, { Controller } from 'lil-gui';
 import { createKeyMap } from './keyboard';
 import { Piano } from './piano';
 import { Synthesizer } from './synth';
@@ -42,25 +42,36 @@ export function createSettings(
 
     const gui = new GUI({ container });
     gui.add(config.synth, 'midiInput').name('Play Sound on MIDI Input');
-    const guiSynth = gui.addFolder('Synthesizer');
-    guiSynth.close();
-    guiSynth.add(config.synthExtra, 'maxGain', 0, 1);
-    guiSynth.add(config.synthExtra, 'numOscillators', 1, 40, 1);
-    guiSynth.add(config.synthExtra, 'oscillatorType', [
+
+    const synthesizer = gui.addFolder('Synthesizer');
+    synthesizer.close();
+    synthesizer.add(config.synthExtra, 'maxGain', 0, 1);
+    synthesizer.add(config.synthExtra, 'numOscillators', 1, 40, 1);
+    synthesizer.add(config.synthExtra, 'oscillatorType', [
         'sawtooth',
         'sine',
         'square',
         'triangle',
     ]);
-    guiSynth.add(config.synthExtra, 'detuneMultiplier', 0, 100);
-    guiSynth.add(config.synthExtra, 'attackSeconds', 0, 5);
-    guiSynth.add(config.synthExtra, 'decaySeconds', 0, 5);
-    guiSynth.add(config.synthExtra, 'sustainLevel', 0, 1);
-    guiSynth.add(config.synthExtra, 'releaseSeconds', 0, 5);
+    synthesizer.add(config.synthExtra, 'detuneMultiplier', 0, 100);
+    const envelope = synthesizer.addFolder('Envelope');
+    envelope.add(config.synthExtra, 'attackSeconds', 0, 5);
+    envelope.add(config.synthExtra, 'decaySeconds', 0, 5);
+    envelope.add(config.synthExtra, 'sustainLevel', 0, 1);
+    envelope.add(config.synthExtra, 'releaseSeconds', 0, 5);
+    envelope.close();
 
-    const guiKeyboard = gui.addFolder('Keyboard');
-    guiKeyboard.add(config.keyboard, 'midiOutput').name('Send MIDI Output');
-    guiKeyboard
+    const compressor = synthesizer.addFolder('Compressor');
+    addAudioParam(compressor, config.synthExtra.compressor, 'threshold');
+    addAudioParam(compressor, config.synthExtra.compressor, 'knee');
+    addAudioParam(compressor, config.synthExtra.compressor, 'ratio');
+    addAudioParam(compressor, config.synthExtra.compressor, 'attack');
+    addAudioParam(compressor, config.synthExtra.compressor, 'release');
+    compressor.close();
+
+    const keyboard = gui.addFolder('Keyboard');
+    keyboard.add(config.keyboard, 'midiOutput').name('Send MIDI Output');
+    keyboard
         .add(config.keyboard, 'showKeys')
         .name('Show Keys')
         .onChange((value: boolean) => {
@@ -69,7 +80,7 @@ export function createSettings(
                 keyMap: config.keyboard.keyMap,
             });
         });
-    guiKeyboard
+    keyboard
         .add(config.keyboard, 'firstBottomKey', firstKeyOptions)
         .name('Bottom Row Start')
         .onChange((value: number) => {
@@ -83,7 +94,7 @@ export function createSettings(
             });
         });
 
-    guiKeyboard
+    keyboard
         .add(config.keyboard, 'firstTopKey', firstKeyOptions)
         .name('Top Row Start')
         .onChange((value: number) => {
@@ -99,4 +110,22 @@ export function createSettings(
 
     gui.add(config, 'killSwitch').name('Release all keys');
     return config;
+}
+
+function addAudioParam<T extends object>(
+    gui: GUI,
+    obj: T,
+    key: keyof T,
+    step?: number
+): Controller {
+    if (!(obj[key] instanceof AudioParam)) {
+        throw Error(`${String(key)} is not an AudioParam, ${obj[key]}`);
+    }
+
+    const param = obj[key] as AudioParam;
+    Object.defineProperty(obj, key, {
+        get: () => Number(param.value.toPrecision(3)),
+        set: (value: number) => (param.value = value),
+    });
+    return gui.add(obj, String(key), param.minValue, param.maxValue, step);
 }

@@ -7,6 +7,7 @@ export type SynthesizerConfig = {
     decaySeconds: number;
     sustainLevel: number;
     releaseSeconds: number;
+    compressor: DynamicsCompressorNode;
 };
 
 export type Synthesizer = {
@@ -16,6 +17,9 @@ export type Synthesizer = {
 };
 
 export function startSynthesizer(context = new AudioContext()): Synthesizer {
+    const compressorNode = new DynamicsCompressorNode(context);
+    compressorNode.connect(context.destination);
+
     const config: SynthesizerConfig = {
         maxGain: 0.4,
         numOscillators: 3,
@@ -25,14 +29,13 @@ export function startSynthesizer(context = new AudioContext()): Synthesizer {
         decaySeconds: 0.3,
         sustainLevel: 0.5,
         releaseSeconds: 0.5,
+        compressor: compressorNode,
     };
+
     const oscillatorsByKey: (KeyOscillator | null)[] = Array.from(
         { length: 128 },
         () => null
     );
-
-    const compressorNode = new DynamicsCompressorNode(context);
-    compressorNode.connect(context.destination);
 
     return {
         keyPressed: (note: number) => {

@@ -3,9 +3,10 @@ export type SynthesizerConfig = {
     numOscillators: number;
     oscillatorType: OscillatorType;
     detuneMultiplier: number;
-    fadeInTimeSeconds: number;
-    fadeOutTimeSeconds: number;
-    sustainDurationSeconds: number;
+    attackSeconds: number;
+    decaySeconds: number;
+    sustainLevel: number;
+    releaseSeconds: number;
 };
 
 export type Synthesizer = {
@@ -20,9 +21,10 @@ export function startSynthesizer(context = new AudioContext()): Synthesizer {
         numOscillators: 3,
         oscillatorType: 'sine',
         detuneMultiplier: 10,
-        fadeInTimeSeconds: 0.015,
-        fadeOutTimeSeconds: 0.5,
-        sustainDurationSeconds: 0,
+        attackSeconds: 0.015,
+        decaySeconds: 0.3,
+        sustainLevel: 0.5,
+        releaseSeconds: 0.5,
     };
     const oscillatorsByKey: (KeyOscillator | null)[] = Array.from(
         { length: 128 },
@@ -90,20 +92,19 @@ function startOscillators(
     gainNode.connect(destination);
 
     gainNode.gain.setValueAtTime(0, context.currentTime); //avoid popping sound
+    const maxLevel = config.maxGain / config.numOscillators;
     gainNode.gain.linearRampToValueAtTime(
-        config.maxGain / config.numOscillators,
-        context.currentTime + config.fadeInTimeSeconds
+        maxLevel,
+        context.currentTime + config.attackSeconds
     );
-    if (config.sustainDurationSeconds > 0) {
+    if (config.sustainLevel < 1) {
         gainNode.gain.exponentialRampToValueAtTime(
-            0.001,
-            context.currentTime + config.sustainDurationSeconds
+            config.sustainLevel * maxLevel || 0.0001,
+            context.currentTime + config.attackSeconds + config.decaySeconds
         );
     }
 
-    oscillators.forEach((oscillator) => {
-        oscillator.start();
-    });
+    oscillators.forEach((oscillator) => oscillator.start());
     return {
         gainNode,
         oscillators,
@@ -115,12 +116,10 @@ function stopOscillators(
     context: AudioContext,
     oscillator: KeyOscillator
 ) {
-    const endTime = context.currentTime + config.fadeOutTimeSeconds;
+    const endTime = context.currentTime + config.releaseSeconds;
     oscillator.gainNode.gain.cancelScheduledValues(0);
-    const currentValue = Math.max(oscillator.gainNode.gain.value, 0.001);
+    const currentValue = Math.max(oscillator.gainNode.gain.value, 0.0001);
     oscillator.gainNode.gain.setValueAtTime(currentValue, context.currentTime);
-    oscillator.gainNode.gain.exponentialRampToValueAtTime(0.001, endTime);
-    oscillator.oscillators.forEach((oscillator) => {
-        oscillator.stop(endTime);
-    });
+    oscillator.gainNode.gain.exponentialRampToValueAtTime(0.0001, endTime);
+    oscillator.oscillators.forEach((oscillator) => oscillator.stop(endTime));
 }

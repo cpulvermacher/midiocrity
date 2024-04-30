@@ -42,7 +42,7 @@ export function createSettings(
 
     const gui = new GUI({ container });
     gui.add(config.synth, 'midiInput').name('Play Sound on MIDI Input');
-    const guiSynth = gui.addFolder('Synthesizer Details');
+    const guiSynth = gui.addFolder('Synthesizer');
     guiSynth.close();
     guiSynth.add(config.synthExtra, 'maxGain', 0, 1);
     guiSynth.add(config.synthExtra, 'numOscillators', 1, 40, 1);
@@ -53,9 +53,10 @@ export function createSettings(
         'triangle',
     ]);
     guiSynth.add(config.synthExtra, 'detuneMultiplier', 0, 100);
-    guiSynth.add(config.synthExtra, 'fadeInTimeSeconds', 0, 5);
-    guiSynth.add(config.synthExtra, 'fadeOutTimeSeconds', 0, 5);
-    guiSynth.add(config.synthExtra, 'sustainDurationSeconds', 0, 5);
+    guiSynth.add(config.synthExtra, 'attackSeconds', 0, 5);
+    guiSynth.add(config.synthExtra, 'decaySeconds', 0, 5);
+    guiSynth.add(config.synthExtra, 'sustainLevel', 0, 1);
+    guiSynth.add(config.synthExtra, 'releaseSeconds', 0, 5);
 
     const guiKeyboard = gui.addFolder('Keyboard');
     guiKeyboard.add(config.keyboard, 'midiOutput').name('Send MIDI Output');

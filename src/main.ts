@@ -7,6 +7,9 @@ const piano = createPiano();
 const synth = startSynthesizer();
 const config = createSettings(document.getElementById('gui')!, synth, piano);
 
+const version = import.meta.env.VITE_GIT_VERSION ?? 'dev';
+document.getElementById('git-version')!.innerText = `Version: ${version}`;
+
 window.addEventListener('resize', piano.onWindowResize);
 piano.animate();
 

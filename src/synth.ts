@@ -1,9 +1,15 @@
 const silenceGain = 0.0001; // avoid zero for exponential ramp
 
+export type OvertoneType = 'none' | 'harmonic' | 'octaves';
+
+export type OvertoneAmplitude = 'constant' | '1/n';
+
 export type SynthesizerConfig = {
     maxGain: number;
-    numOscillators: number;
     oscillatorType: OscillatorType;
+    numOscillators: number;
+    overtoneType: OvertoneType;
+    overtoneAmplitude: OvertoneAmplitude;
     detuneMultiplier: number;
     attackSeconds: number;
     decaySeconds: number;
@@ -26,6 +32,8 @@ export function startSynthesizer(context = new AudioContext()): Synthesizer {
         maxGain: 0.4,
         numOscillators: 3,
         oscillatorType: 'sine',
+        overtoneType: 'none',
+        overtoneAmplitude: 'constant',
         detuneMultiplier: 10,
         attackSeconds: 0.015,
         decaySeconds: 0.3,
@@ -85,11 +93,28 @@ function startOscillators(
         (_, i) => {
             const oscillator = context.createOscillator();
             oscillator.type = config.oscillatorType;
-            // oscillator.frequency.value = frequency * (i + 1);
-            // oscillator.frequency.value = frequency * (1 + 0.001 * i);
-            oscillator.frequency.value = frequency;
-            oscillator.detune.value = Math.sqrt(i) * config.detuneMultiplier;
-            oscillator.connect(gainNode);
+            if (config.overtoneType === 'harmonic') {
+                oscillator.frequency.value = frequency * (i + 1);
+            } else if (config.overtoneType === 'octaves') {
+                oscillator.frequency.value = frequency * Math.pow(2, i);
+            } else {
+                oscillator.frequency.value = frequency;
+            }
+
+            if (config.detuneMultiplier !== 0) {
+                oscillator.detune.value =
+                    Math.sqrt(i) * config.detuneMultiplier;
+            }
+
+            if (i > 0 && config.overtoneAmplitude !== 'constant') {
+                const gain = 1 / (i + 1);
+                const overtoneGain = context.createGain();
+                overtoneGain.gain.value = gain;
+
+                oscillator.connect(overtoneGain).connect(gainNode);
+            } else {
+                oscillator.connect(gainNode);
+            }
             return oscillator;
         }
     );

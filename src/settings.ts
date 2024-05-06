@@ -14,6 +14,8 @@ const firstKeyOptions = {
     C6: 84,
 };
 const oscillatorOptions = ['sawtooth', 'sine', 'square', 'triangle'];
+const overtoneType = ['none', 'harmonic', 'octaves'];
+const overtoneAmplitude = ['constant', '1/n'];
 
 export function createSettings(
     container: HTMLElement,
@@ -47,8 +49,10 @@ export function createSettings(
     const synthesizer = gui.addFolder('Synthesizer');
     synthesizer.close();
     synthesizer.add(config.synthExtra, 'maxGain', 0, 1);
-    synthesizer.add(config.synthExtra, 'numOscillators', 1, 40, 1);
     synthesizer.add(config.synthExtra, 'oscillatorType', oscillatorOptions);
+    synthesizer.add(config.synthExtra, 'numOscillators', 1, 40, 1);
+    synthesizer.add(config.synthExtra, 'overtoneType', overtoneType);
+    synthesizer.add(config.synthExtra, 'overtoneAmplitude', overtoneAmplitude);
     synthesizer.add(config.synthExtra, 'detuneMultiplier', 0, 100);
     const envelope = synthesizer.addFolder('Envelope');
     envelope.add(config.synthExtra, 'attackSeconds', 0, 5);

@@ -520,6 +520,19 @@ function addDebugHelpers(piano: PianoState) {
         piano.renderer.render(piano.scene, piano.camera);
     });
 
+    let lastProgramCount = 0;
+    function logShaderRecompilations() {
+        const programCount = piano.renderer.info.programs?.length || 0;
+        if (programCount !== lastProgramCount) {
+            console.log(
+                'Programs added / shaders recompiled:',
+                programCount - lastProgramCount
+            );
+            lastProgramCount = programCount;
+        }
+    }
+    setInterval(logShaderRecompilations, 1000);
+
     const stats = new Stats();
     document.body.appendChild(stats.dom);
 

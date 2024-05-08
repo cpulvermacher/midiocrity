@@ -52,7 +52,7 @@ type Key = {
     x: number;
     mesh: THREE.Object3D;
     pressedTimestamp: number | null;
-    light: THREE.PointLight | null;
+    light: THREE.PointLight;
     activeKeyFlow: KeyFlow | null;
 };
 
@@ -276,13 +276,22 @@ function createKey(scene: THREE.Scene, x: number, isBlack: boolean): Key {
     mesh.position.z = keyConfig.z;
     scene.add(mesh);
 
+    const light = new THREE.PointLight(0xff0000);
+    light.visible = false;
+    light.position.set(
+        mesh.position.x,
+        mesh.position.y - 2.5,
+        mesh.position.z + keyWhite.thickness
+    );
+    scene.add(light);
+
     return {
         isBlack,
         width: keyConfig.width,
         x: mesh.position.x,
         mesh,
         pressedTimestamp: null,
-        light: null,
+        light,
         activeKeyFlow: null,
     };
 }
@@ -348,7 +357,7 @@ function animateLights(keys: Key[], timestampMs: number) {
     let dirty = false;
     for (const key of keys) {
         const light = key.light;
-        if (!light) {
+        if (!light.visible) {
             continue;
         }
 
@@ -415,26 +424,14 @@ function keyPressed(piano: PianoState, keyIndex: number, velocity: number) {
     const pressedTimestamp = (document.timeline.currentTime as number) ?? 0;
 
     const key = piano.keys[keyIndex];
-    const pointLight = new THREE.PointLight(
-        0xff0000,
-        Math.pow(100, velocity) - 1 + minIntensity
-    );
-    pointLight.position.set(
-        key.mesh.position.x,
-        key.mesh.position.y - 2.5,
-        key.mesh.position.z + keyWhite.thickness
-    );
-    piano.scene.add(pointLight);
-    if (key.light !== null) {
-        piano.scene.remove(key.light);
-        key.light.dispose();
-    }
-    key.light = pointLight;
-
-    //TODO single mesh with emittance as texture?
     const color = new THREE.Color();
     color.setHSL(getCurrentHue(pressedTimestamp), 1.0, 0.5);
 
+    key.light.visible = true;
+    key.light.intensity = Math.pow(100, velocity) - 1 + minIntensity;
+    key.light.color = color;
+
+    //TODO single mesh with emittance as texture?
     const flowGeometry = new THREE.BoxGeometry(
         key.width,
         initialKeyFlowHeight,
@@ -467,11 +464,7 @@ function keyReleased(piano: PianoState, keyIndex: number) {
     const key = piano.keys[keyIndex];
     key.pressedTimestamp = null;
 
-    if (key.light) {
-        piano.scene.remove(key.light);
-        key.light.dispose();
-        key.light = null;
-    }
+    key.light.visible = false;
 
     if (key.activeKeyFlow) {
         key.activeKeyFlow.active = false;

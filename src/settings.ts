@@ -14,7 +14,7 @@ const firstKeyOptions = {
     C6: 84,
 };
 const oscillatorOptions = ['sawtooth', 'sine', 'square', 'triangle'];
-const overtoneType = ['none', 'harmonic', 'octaves'];
+const overtoneType = ['none', 'harmonic', 'octaves', 'drawbars'];
 const overtoneAmplitude = ['constant', '1/n'];
 
 export function createSettings(
@@ -54,6 +54,18 @@ export function createSettings(
     synthesizer.add(config.synthExtra, 'overtoneType', overtoneType);
     synthesizer.add(config.synthExtra, 'overtoneAmplitude', overtoneAmplitude);
     synthesizer.add(config.synthExtra, 'detuneMultiplier', 0, 100);
+    const drawbars = synthesizer.addFolder('Drawbars');
+    drawbars.close();
+    drawbars.add(config.synthExtra.drawbars, 'subFundamental', 0, 8, 1);
+    drawbars.add(config.synthExtra.drawbars, 'subThird', 0, 8, 1);
+    drawbars.add(config.synthExtra.drawbars, 'fundamental', 0, 8, 1);
+    drawbars.add(config.synthExtra.drawbars, 'second', 0, 8, 1);
+    drawbars.add(config.synthExtra.drawbars, 'third', 0, 8, 1);
+    drawbars.add(config.synthExtra.drawbars, 'fourth', 0, 8, 1);
+    drawbars.add(config.synthExtra.drawbars, 'fifth', 0, 8, 1);
+    drawbars.add(config.synthExtra.drawbars, 'sixth', 0, 8, 1);
+    drawbars.add(config.synthExtra.drawbars, 'eighth', 0, 8, 1);
+
     const envelope = synthesizer.addFolder('Envelope');
     envelope.add(config.synthExtra, 'attackSeconds', 0, 5);
     envelope.add(config.synthExtra, 'decaySeconds', 0, 5);

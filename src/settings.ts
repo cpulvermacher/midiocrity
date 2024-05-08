@@ -29,6 +29,9 @@ export function createSettings(
         }
     }
     const config = {
+        visualization: {
+            particles: piano.runtimeConfig.particles,
+        },
         synth: {
             midiInput: true,
         },
@@ -45,6 +48,15 @@ export function createSettings(
 
     const gui = new GUI({ container });
     gui.add(config.synth, 'midiInput').name('Play Sound on MIDI Input');
+
+    const visualization = gui.addFolder('Visualization');
+    visualization.close();
+    const particles = visualization.addFolder('Particles');
+    particles.add(config.visualization.particles, 'spawnCount', 0, 100, 1);
+    particles.add(config.visualization.particles, 'phaseFactor', 0, 10000);
+    particles.add(config.visualization.particles, 'amplitude', 0, 10);
+    particles.add(config.visualization.particles, 'omega', 0, 1);
+    particles.add(config.visualization.particles, 'despawnMs', 10, 10000);
 
     const synthesizer = gui.addFolder('Synthesizer');
     synthesizer.close();
@@ -86,10 +98,9 @@ export function createSettings(
         .add(config.keyboard, 'showKeys')
         .name('Show Keys')
         .onChange((value: boolean) => {
-            piano.configUpdated({
-                showKeys: value,
-                keyMap: config.keyboard.keyMap,
-            });
+            piano.runtimeConfig.showKeys = value;
+            piano.runtimeConfig.keyMap = config.keyboard.keyMap;
+            piano.configUpdated();
         });
     keyboard
         .add(config.keyboard, 'firstBottomKey', firstKeyOptions)
@@ -99,10 +110,8 @@ export function createSettings(
                 value,
                 config.keyboard.firstTopKey
             );
-            piano.configUpdated({
-                showKeys: config.keyboard.showKeys,
-                keyMap: config.keyboard.keyMap,
-            });
+            piano.runtimeConfig.keyMap = config.keyboard.keyMap;
+            piano.configUpdated();
         });
 
     keyboard
@@ -113,10 +122,8 @@ export function createSettings(
                 config.keyboard.firstBottomKey,
                 value
             );
-            piano.configUpdated({
-                showKeys: config.keyboard.showKeys,
-                keyMap: config.keyboard.keyMap,
-            });
+            piano.runtimeConfig.keyMap = config.keyboard.keyMap;
+            piano.configUpdated();
         });
 
     gui.add(config, 'killSwitch').name('Release all keys');

@@ -81,10 +81,18 @@ type Config = {
 export type RuntimeConfig = {
     showKeys: boolean;
     keyMap: KeyMap;
+    particles: {
+        spawnCount: number;
+        phaseFactor: number;
+        amplitude: number;
+        omega: number;
+        despawnMs: number;
+    };
 };
 
 type PianoState = {
     config: Config;
+    runtimeConfig: RuntimeConfig;
     animationRunning: boolean;
 
     //main three.js objects
@@ -106,6 +114,7 @@ type PianoState = {
         sostenuto: Pedal;
         sustain: Pedal;
     };
+    particles: THREE.Points;
 
     //development helpers
     stats: Stats | null;
@@ -117,7 +126,8 @@ export type Piano = {
     pedalPressed: (pedal: PedalType, value: number) => void;
     animate: () => void;
     onWindowResize: () => void;
-    configUpdated: (newConfig?: RuntimeConfig) => void;
+    configUpdated: () => void;
+    runtimeConfig: RuntimeConfig;
 };
 
 export function createPiano(numKeys = 88): Piano {
@@ -126,6 +136,17 @@ export function createPiano(numKeys = 88): Piano {
         lowestMidiNote: getLowestMidiNote(numKeys), // needed for translating MIDI note range of e.g. 21 - 108 for 88-key piano to 0 based index
         keyOffset: getKeyOffset(numKeys),
     };
+    const runtimeConfig: RuntimeConfig = {
+        showKeys: false,
+        keyMap: {},
+        particles: {
+            spawnCount: 10,
+            phaseFactor: 3400,
+            amplitude: 0.2,
+            omega: 0.882,
+            despawnMs: 1000,
+        },
+    };
 
     const scene = createScene();
     const camera = createCamera();
@@ -133,6 +154,7 @@ export function createPiano(numKeys = 88): Piano {
     const keys = createKeys(scene, config);
     const piano: PianoState = {
         config,
+        runtimeConfig,
         animationRunning: false,
 
         scene,
@@ -148,6 +170,7 @@ export function createPiano(numKeys = 88): Piano {
             sostenuto: createPedal(scene, 0),
             sustain: createPedal(scene, 1),
         },
+        particles: createParticles(scene),
 
         stats: null,
     };
@@ -170,15 +193,15 @@ export function createPiano(numKeys = 88): Piano {
         startAnimation();
     }
 
-    function configUpdated(newConfig?: RuntimeConfig) {
+    function configUpdated() {
         piano.keyboardMappingOverlay.forEach((mesh) => {
             piano.scene.remove(mesh);
         });
         piano.keyboardMappingOverlay = [];
-        if (newConfig?.showKeys) {
+        if (piano.runtimeConfig.showKeys) {
             piano.keyboardMappingOverlay = createKeyMappingOverlay(
                 piano,
-                newConfig.keyMap
+                piano.runtimeConfig.keyMap
             );
         } else {
             startAnimation();
@@ -203,6 +226,7 @@ export function createPiano(numKeys = 88): Piano {
         animate: startAnimation,
         onWindowResize,
         configUpdated,
+        runtimeConfig,
     };
 }
 
@@ -378,6 +402,116 @@ function getCurrentHue(timestampMs: number) {
     return Math.sin(timestampMs / 20000);
 }
 
+function createParticles(scene: THREE.Scene) {
+    const geometry = new THREE.BufferGeometry();
+    const material = new THREE.PointsMaterial({
+        vertexColors: true,
+        size: 0.15,
+    });
+    const particles = new THREE.Points(geometry, material);
+    scene.add(particles);
+    return particles;
+}
+
+function animateParticles(piano: PianoState, timestampMs: number) {
+    const spawnWidth = 0.05;
+    const zOffset = 1;
+
+    const color = new THREE.Color();
+    let positions: number[] = [];
+    if (piano.particles.geometry.getAttribute('position')) {
+        positions = [
+            ...piano.particles.geometry.getAttribute('position').array,
+        ];
+    }
+    let initialInfo: number[] = [];
+    if (piano.particles.geometry.getAttribute('initialInfo')) {
+        initialInfo = [
+            ...piano.particles.geometry.getAttribute('initialInfo').array,
+        ];
+    }
+    let colors: number[] = [];
+    if (piano.particles.geometry.getAttribute('color')) {
+        colors = [...piano.particles.geometry.getAttribute('color').array];
+    }
+
+    for (const key of piano.keys) {
+        if (key.pressedTimestamp === null) {
+            continue;
+        }
+
+        color.setHSL(getCurrentHue(key.pressedTimestamp), 1.0, 0.5);
+
+        for (let i = 0; i < piano.runtimeConfig.particles.spawnCount; i++) {
+            const x0 = key.x + THREE.MathUtils.randFloatSpread(key.width);
+            const y0 = THREE.MathUtils.randFloatSpread(spawnWidth);
+            const z0 = zOffset + THREE.MathUtils.randFloatSpread(spawnWidth);
+
+            positions.push(x0, y0, z0);
+            initialInfo.push(x0, y0, timestampMs);
+            colors.push(color.r, color.g, color.b);
+        }
+    }
+
+    //animate existing particles in x&y along a path based on their z position
+    for (let i = 0; i < positions.length; i += 3) {
+        const z = positions[i + 2];
+
+        const x0 = initialInfo[i];
+        const y0 = initialInfo[i + 1];
+        const startT = initialInfo[i + 2];
+
+        const t = timestampMs - startT;
+
+        //despawn after some time
+        const randomPhase = z - zOffset;
+        const tWithPhase =
+            t + randomPhase * piano.runtimeConfig.particles.phaseFactor;
+        if (tWithPhase > piano.runtimeConfig.particles.despawnMs) {
+            positions.splice(i, 3);
+            initialInfo.splice(i, 3);
+            colors.splice(i, 3);
+            i -= 3;
+            continue;
+        }
+
+        const omega = randomPhase * piano.runtimeConfig.particles.omega;
+        positions[i] = x0 + randomPhase * tWithPhase;
+        positions[i + 1] =
+            y0 +
+            Math.sin(tWithPhase * omega) *
+                piano.runtimeConfig.particles.amplitude;
+    }
+
+    const positionsDirty =
+        positions.length > 0 ||
+        piano.particles.geometry.getAttribute('position')?.array.length !==
+            positions.length;
+    if (positionsDirty) {
+        piano.particles.geometry.setAttribute(
+            'position',
+            new THREE.BufferAttribute(new Float32Array(positions), 3)
+        );
+        piano.particles.geometry.setDrawRange(0, positions.length / 3);
+    }
+
+    const initialInfoDirty =
+        piano.particles.geometry.getAttribute('initialInfo')?.array.length !==
+        initialInfo.length;
+    if (initialInfoDirty) {
+        piano.particles.geometry.setAttribute(
+            'initialInfo',
+            new THREE.BufferAttribute(new Float32Array(initialInfo), 3)
+        );
+        piano.particles.geometry.setAttribute(
+            'color',
+            new THREE.BufferAttribute(new Float32Array(colors), 3)
+        );
+    }
+
+    return positionsDirty || initialInfoDirty;
+}
+
 function animateKeyFlow(
     scene: THREE.Scene,
     keyFlows: KeyFlow[],
@@ -477,8 +611,10 @@ function animate(piano: PianoState, timestampMs: number = 0) {
         piano.keyFlows,
         timestampMs
     );
+    const particlesDirty = animateParticles(piano, timestampMs);
     const cameraDirty = animateCameraToFitScreen(piano);
-    piano.animationRunning = lightsDirty || keyFlowDirty || cameraDirty;
+    piano.animationRunning =
+        lightsDirty || keyFlowDirty || particlesDirty || cameraDirty;
 
     piano.renderer.render(piano.scene, piano.camera);
     piano.stats?.end();

@@ -11,8 +11,13 @@ in your browser.
 
 ![Demo](./demo.gif)
 
+## Features
 
-Depending on your setup, you can also visualize MIDI files by simply playing them. On Linux, open the app and try running:
+- Visualization of MIDI inputs on an 88 key piano, including velocity and pedals.
+- Input via PC keyboard (Settings > Show Keys)
+- A shabby built-in sythesizer (Turn it off via Settings > Play Sound on MIDI Input, or configure via Settings > Synthesizer)
+- MIDI output (Settings > Send MIDI Output)
+- Depending on your setup, you can also visualize MIDI files by simply playing them. On Linux, open the app and try running:
 ```
 aplaymidi -p 128:0 hello.mid
 ```

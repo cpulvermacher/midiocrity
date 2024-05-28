@@ -9,6 +9,8 @@ Just connect your MIDI controller and open
 [https://cpulvermacher.github.io/midiocrity](https://cpulvermacher.github.io/midiocrity)
 in your browser.
 
+![Demo](./demo.gif)
+
 
 Depending on your setup, you can also visualize MIDI files by simply playing them. On Linux, open the app and try running:
 ```

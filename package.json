@@ -11,19 +11,19 @@
         "test": "vitest --run"
     },
     "devDependencies": {
-        "@types/three": "^0.167.1",
-        "@typescript-eslint/eslint-plugin": "^7.16.1",
-        "@typescript-eslint/parser": "^7.16.1",
+        "@types/three": "^0.168.0",
+        "@typescript-eslint/eslint-plugin": "^8.6.0",
+        "@typescript-eslint/parser": "^8.6.0",
         "eslint": "^8.57.0",
-        "happy-dom": "^14.12.3",
+        "happy-dom": "^15.7.4",
         "prettier": "^3.3.3",
         "stats.js": "^0.17.0",
-        "typescript": "^5.5.4",
-        "vite": "^5.3.5",
-        "vitest": "^2.0.5"
+        "typescript": "^5.6.2",
+        "vite": "^5.4.6",
+        "vitest": "^2.1.1"
     },
     "dependencies": {
         "lil-gui": "^0.19.2",
-        "three": "^0.167.1"
+        "three": "^0.168.0"
     }
 }

@@ -145,7 +145,7 @@ function addAudioParam<T extends object>(
         get: () => Number(param.value.toPrecision(3)),
         set: (value: number) => (param.value = value),
     });
-    return gui.add(obj, String(key), param.minValue, param.maxValue, step);
+    return gui.add(obj, key, param.minValue, param.maxValue, step);
 }
 
 function addAudioNode(synthesizer: GUI, node: AudioNode, name: string) {

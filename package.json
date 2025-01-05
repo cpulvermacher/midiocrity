@@ -19,8 +19,8 @@
         "prettier": "^3.3.3",
         "stats.js": "^0.17.0",
         "typescript": "^5.6.2",
-        "vite": "^5.4.10",
-        "vitest": "^2.1.4"
+        "vite": "^6.0.7",
+        "vitest": "^2.1.8"
     },
     "dependencies": {
         "lil-gui": "^0.20.0",

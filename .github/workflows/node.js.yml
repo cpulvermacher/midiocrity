@@ -26,8 +26,8 @@ jobs:
         cache: 'pnpm'
     - run: pnpm install
     - run: pnpm run lint
-    - run: pnpm run test --if-present
-    - run: pnpm run build --if-present
+    - run: pnpm run test
+    - run: pnpm run build
   deploy:
     needs: build
     if: github.ref == 'refs/heads/main'

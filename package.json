@@ -12,6 +12,7 @@
         "test": "vitest --run"
     },
     "devDependencies": {
+        "@types/stats.js": "^0.17.3",
         "@types/three": "^0.171.0",
         "@typescript-eslint/eslint-plugin": "^8.19.0",
         "@typescript-eslint/parser": "^8.19.0",

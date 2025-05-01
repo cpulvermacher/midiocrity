@@ -26,8 +26,18 @@ const { status, sendKeyPress, sendKeyRelease } = startMIDI({
         }
         piano.keyReleased(key);
     },
-    onPedalPressed: (pedal, value) => piano.pedalPressed(pedal, value / 128.0),
-    onPedalReleased: (pedal, value) => piano.pedalPressed(pedal, value / 128.0),
+    onPedalPressed: (pedal, value) => {
+        if (config.synth.midiInput) {
+            synth.pedalPressed(pedal, value / 128.0);
+        }
+        piano.pedalPressed(pedal, value / 128.0);
+    },
+    onPedalReleased: (pedal, value) => {
+        if (config.synth.midiInput) {
+            synth.pedalPressed(pedal, value / 128.0);
+        }
+        piano.pedalPressed(pedal, value / 128.0);
+    },
     onInit: () => {
         document.getElementById('loading')!.style.display = 'none';
     },

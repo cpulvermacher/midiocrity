@@ -66,6 +66,7 @@ export function createSettings(
     synthesizer.add(config.synthExtra, 'overtoneType', overtoneType);
     synthesizer.add(config.synthExtra, 'overtoneAmplitude', overtoneAmplitude);
     synthesizer.add(config.synthExtra, 'detuneMultiplier', 0, 100);
+
     const drawbars = synthesizer.addFolder('Drawbars');
     drawbars.close();
     drawbars.add(config.synthExtra.drawbars, 'subFundamental', 0, 8, 1);

@@ -1,3 +1,5 @@
+import type { PedalType } from './midi';
+
 const silenceGain = 0.0001; // avoid zero for exponential ramp
 
 export type OvertoneType = 'none' | 'harmonic' | 'octaves' | 'drawbars';
@@ -32,6 +34,7 @@ export type SynthesizerConfig = {
 export type Synthesizer = {
     keyPressed: (note: number) => void;
     keyReleased: (note: number) => void;
+    pedalPressed: (pedal: PedalType, value: number) => void;
     config: SynthesizerConfig;
 };
 
@@ -64,35 +67,69 @@ export function startSynthesizer(context = new AudioContext()): Synthesizer {
         compressor: compressorNode,
     };
 
-    const oscillatorsByKey: (KeyOscillator | null)[] = Array.from(
-        { length: 128 },
-        () => null
-    );
+    const statusByKey: KeyStatus[] = Array.from({ length: 128 }, () => ({
+        pressed: false,
+        gainNode: null,
+        oscillators: [],
+    }));
+    let sustainPedalValue = 0;
 
     return {
         keyPressed: (note: number) => {
-            if (oscillatorsByKey[note] === null) {
-                oscillatorsByKey[note] = startOscillators(
-                    config,
-                    context,
-                    compressorNode,
-                    keyToFrequency(note)
-                );
+            if (!statusByKey[note].pressed) {
+                statusByKey[note].pressed = true;
+
+                if (!statusByKey[note].gainNode) {
+                    statusByKey[note] = {
+                        ...statusByKey[note],
+                        ...startOscillators(
+                            config,
+                            context,
+                            compressorNode,
+                            keyToFrequency(note)
+                        ),
+                    };
+                }
             }
         },
         keyReleased: (note: number) => {
-            const oscillator = oscillatorsByKey[note];
-            if (oscillator !== null) {
-                stopOscillators(config, context, oscillator);
-                oscillatorsByKey[note] = null;
+            const status = statusByKey[note];
+            if (status.pressed) {
+                status.pressed = false;
+                if (sustainPedalValue === 0) {
+                    stopOscillators(config, context, status);
+                }
+            }
+        },
+        pedalPressed: (pedal: PedalType, value: number) => {
+            if (pedal === 'sustain') {
+                console.log('sustain', value);
+                sustainPedalValue = value;
+
+                // when releasing the pedal, adjust gain of all active notes (where pressed = false)
+                statusByKey.forEach((status) => {
+                    if (!status.pressed && status.gainNode) {
+                        if (value === 0) {
+                            stopOscillators(config, context, status);
+                        } else {
+                            setGainForSustainedNote(
+                                status.gainNode,
+                                context,
+                                value,
+                                config
+                            );
+                        }
+                    }
+                });
             }
         },
         config,
     };
 }
 
-type KeyOscillator = {
-    gainNode: GainNode;
+type KeyStatus = {
+    pressed: boolean;
+    gainNode: GainNode | null;
     oscillators: OscillatorNode[];
 };
 
@@ -108,7 +145,7 @@ function startOscillators(
     context: AudioContext,
     destination: AudioNode,
     frequency: number
-): KeyOscillator {
+) {
     const gainNode = context.createGain();
     const numOscillators =
         config.overtoneType === 'drawbars' ? 9 : config.numOscillators;
@@ -226,12 +263,31 @@ function getGain(config: SynthesizerConfig, i: number): number {
 function stopOscillators(
     config: SynthesizerConfig,
     context: AudioContext,
-    oscillator: KeyOscillator
+    status: KeyStatus
 ) {
     const endTime = context.currentTime + config.releaseSeconds;
-    oscillator.gainNode.gain.cancelScheduledValues(0);
-    const currentValue = Math.max(oscillator.gainNode.gain.value, silenceGain);
-    oscillator.gainNode.gain.setValueAtTime(currentValue, context.currentTime);
-    oscillator.gainNode.gain.exponentialRampToValueAtTime(silenceGain, endTime);
-    oscillator.oscillators.forEach((oscillator) => oscillator.stop(endTime));
+    if (status.gainNode) {
+        status.gainNode.gain.cancelScheduledValues(0);
+        const currentGain = Math.max(status.gainNode.gain.value, silenceGain);
+        status.gainNode.gain.setValueAtTime(currentGain, context.currentTime);
+        status.gainNode.gain.exponentialRampToValueAtTime(silenceGain, endTime);
+        status.gainNode = null;
+    }
+    status.oscillators.forEach((oscillator) => oscillator.stop(endTime));
+    status.oscillators = [];
+}
+
+function setGainForSustainedNote(
+    gainNode: GainNode,
+    context: AudioContext,
+    sustainValue: number, // in (0, 1]
+    config: SynthesizerConfig
+) {
+    gainNode.gain.cancelScheduledValues(0);
+    const currentGain = Math.max(gainNode.gain.value, silenceGain);
+    gainNode.gain.setValueAtTime(currentGain, context.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(
+        currentGain * sustainValue,
+        context.currentTime + config.releaseSeconds //TODO check if the time scale is what I want
+    );
 }

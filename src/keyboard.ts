@@ -63,6 +63,7 @@ const keysBottom = [
     'Slash',
 ];
 
+/** for displaying key on piano */
 export const codeToCharMap: { [code: string]: string } = {
     BracketLeft: '[',
     Comma: ',',

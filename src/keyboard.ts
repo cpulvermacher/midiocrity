@@ -12,6 +12,7 @@ export function createKeyMap(
     return {
         ...toKeyMap(keysBottom, firstBottomKey),
         ...toKeyMap(keysTop, firstTopKey),
+        Space: -1, // sustain
     };
 }
 

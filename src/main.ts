@@ -105,16 +105,16 @@ window.addEventListener('keydown', function (event) {
     } else {
         if (config.keyboard.keyMap && event.code in config.keyboard.keyMap) {
             const key = config.keyboard.keyMap[event.code];
-            if (key >= 0) {
+            if (typeof key === 'number') {
                 synth.keyPressed(key);
                 if (config.keyboard.midiOutput) {
                     sendKeyPress(key);
                 } else {
                     piano.keyPressed(key, 0.5);
                 }
-            } else if (key === -1) {
-                synth.pedalPressed('sustain', 1);
-                piano.pedalPressed('sustain', 1);
+            } else {
+                synth.pedalPressed(key, 1);
+                piano.pedalPressed(key, 1);
             }
         }
     }
@@ -123,16 +123,16 @@ window.addEventListener('keydown', function (event) {
 window.addEventListener('keyup', function (event) {
     if (config.keyboard.keyMap && event.code in config.keyboard.keyMap) {
         const key = config.keyboard.keyMap[event.code];
-        if (key >= 0) {
+        if (typeof key === 'number') {
             synth.keyReleased(key);
             if (config.keyboard.midiOutput) {
                 sendKeyRelease(key);
             } else {
                 piano.keyReleased(key);
             }
-        } else if (key === -1) {
-            synth.pedalPressed('sustain', 0);
-            piano.pedalPressed('sustain', 0);
+        } else {
+            synth.pedalPressed(key, 0);
+            piano.pedalPressed(key, 0);
         }
     }
 });

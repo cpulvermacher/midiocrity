@@ -706,17 +706,31 @@ function createKeyMappingOverlay(piano: PianoState, keyMap: KeyMap) {
 
             const mesh = new THREE.Mesh(geometry, material);
 
-            const numUsed = usedNotes[note] ?? 0;
-            usedNotes[note] = numUsed + 1;
-            const isBlack =
-                piano.keys[note - piano.config.lowestMidiNote].isBlack;
+            if (typeof note === 'number') {
+                // key
+                const numUsed = usedNotes[note] ?? 0;
+                usedNotes[note] = numUsed + 1;
+                const isBlack =
+                    piano.keys[note - piano.config.lowestMidiNote].isBlack;
 
-            const x = piano.keys[note - piano.config.lowestMidiNote].x;
-            const y =
-                1 -
-                (isBlack ? keyBlack.height : keyWhite.height) +
-                numUsed * 0.7;
-            mesh.position.set(x, y, 0.5);
+                const x = piano.keys[note - piano.config.lowestMidiNote].x;
+                const y =
+                    1 -
+                    (isBlack ? keyBlack.height : keyWhite.height) +
+                    numUsed * 0.7;
+                mesh.position.set(x, y, 0.5);
+            } else {
+                // pedal
+                const pedal = piano.pedals[note];
+                mesh.position.set(
+                    pedal.x,
+                    -pianoHeight + 0.5,
+                    1.2 * pianoHeight
+                );
+                mesh.rotation.y = Math.PI / 2;
+                mesh.scale.set(0.7, 0.7, 0.7);
+                mesh.lookAt(piano.camera.position);
+            }
 
             piano.scene.add(mesh);
             meshes.push(mesh);

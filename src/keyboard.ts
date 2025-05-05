@@ -1,8 +1,10 @@
-/** a map of KeyboardEvent.code to a note number
+import type { PedalType } from './midi';
+
+/** a map of KeyboardEvent.code to a note number or pedal
  * Note: KeyboardEvent.code should be layout independent, but isn't on Firefox.
  */
 export type KeyMap = {
-    [key: string]: number;
+    [key: string]: number | PedalType;
 };
 
 export function createKeyMap(
@@ -12,7 +14,7 @@ export function createKeyMap(
     return {
         ...toKeyMap(keysBottom, firstBottomKey),
         ...toKeyMap(keysTop, firstTopKey),
-        Space: -1, // sustain
+        Space: 'sustain',
     };
 }
 
@@ -108,4 +110,5 @@ export const codeToCharMap: { [code: string]: string } = {
     Semicolon: ';',
     ShiftLeft: 'Shift',
     Slash: '/',
+    Space: 'Space',
 };

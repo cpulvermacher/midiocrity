@@ -288,6 +288,6 @@ function setGainForSustainedNote(
     gainNode.gain.setValueAtTime(currentGain, context.currentTime);
     gainNode.gain.exponentialRampToValueAtTime(
         currentGain * sustainValue,
-        context.currentTime + config.releaseSeconds //TODO check if the time scale is what I want
+        context.currentTime + config.releaseSeconds
     );
 }

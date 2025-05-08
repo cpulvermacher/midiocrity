@@ -20,7 +20,7 @@ jobs:
       with:
         fetch-depth: 0
         fetch-tags: true
-    - uses: pnpm/action-setup@v4
+    - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # v4
       with:
         version: 9
     - name: Use Node.js ${{ matrix.node-version }}
@@ -43,7 +43,7 @@ jobs:
       with:
         fetch-depth: 0
         fetch-tags: true
-    - uses: pnpm/action-setup@v4
+    - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # v4
       with:
         version: 9
     - name: Use Node.js
@@ -53,6 +53,6 @@ jobs:
         cache: 'pnpm'
     - run: pnpm install && pnpm run build
     - name: Deploy 🚀
-      uses: JamesIves/github-pages-deploy-action@v4
+      uses: JamesIves/github-pages-deploy-action@6c2d9db40f9296374acc17b90404b6e8864128c8 # v4.7.3
       with:
         folder: dist

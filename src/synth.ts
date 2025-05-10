@@ -67,33 +67,29 @@ export function startSynthesizer(context = new AudioContext()): Synthesizer {
         compressor: compressorNode,
     };
 
-    const statusByKey: KeyStatus[] = Array.from({ length: 128 }, () => ({
-        pressed: false,
-        gainNode: null,
-        oscillators: [],
-    }));
+    const statusByNote: NoteStatus[] = Array.from(
+        { length: 128 },
+        (_, note) => ({
+            frequency: keyToFrequency(note),
+            pressed: false,
+            gainNode: null,
+            oscillators: [],
+        })
+    );
     let sustainPedalValue = 0;
 
     return {
         keyPressed: (note: number) => {
-            if (!statusByKey[note].pressed) {
-                statusByKey[note].pressed = true;
+            const status = statusByNote[note];
+            if (!status.pressed) {
+                status.pressed = true;
 
-                if (!statusByKey[note].gainNode) {
-                    statusByKey[note] = {
-                        ...statusByKey[note],
-                        ...startOscillators(
-                            config,
-                            context,
-                            compressorNode,
-                            keyToFrequency(note)
-                        ),
-                    };
-                }
+                //if note is sustained, we should still create a new sound!
+                startOscillators(config, context, compressorNode, status);
             }
         },
         keyReleased: (note: number) => {
-            const status = statusByKey[note];
+            const status = statusByNote[note];
             if (status.pressed) {
                 status.pressed = false;
                 if (sustainPedalValue === 0) {
@@ -107,7 +103,7 @@ export function startSynthesizer(context = new AudioContext()): Synthesizer {
                 sustainPedalValue = value;
 
                 // when releasing the pedal, adjust gain of all active notes (where pressed = false)
-                statusByKey.forEach((status) => {
+                statusByNote.forEach((status) => {
                     if (!status.pressed && status.gainNode) {
                         if (value === 0) {
                             stopOscillators(config, context, status);
@@ -127,7 +123,8 @@ export function startSynthesizer(context = new AudioContext()): Synthesizer {
     };
 }
 
-type KeyStatus = {
+type NoteStatus = {
+    frequency: number;
     pressed: boolean;
     gainNode: GainNode | null;
     oscillators: OscillatorNode[];
@@ -144,9 +141,14 @@ function startOscillators(
     config: SynthesizerConfig,
     context: AudioContext,
     destination: AudioNode,
-    frequency: number
+    status: NoteStatus
 ) {
-    const gainNode = context.createGain();
+    if (!status.gainNode) {
+        status.gainNode = context.createGain();
+        status.gainNode.connect(destination);
+    }
+    const gainNode = status.gainNode;
+
     const numOscillators =
         config.overtoneType === 'drawbars' ? 9 : config.numOscillators;
     const oscillators: OscillatorNode[] = [];
@@ -157,7 +159,7 @@ function startOscillators(
         }
         const oscillator = context.createOscillator();
         oscillator.type = config.oscillatorType;
-        oscillator.frequency.value = getFrequency(config, frequency, i);
+        oscillator.frequency.value = getFrequency(config, status.frequency, i);
 
         if (config.detuneMultiplier !== 0) {
             oscillator.detune.value = Math.sqrt(i) * config.detuneMultiplier;
@@ -173,8 +175,7 @@ function startOscillators(
         }
         oscillators.push(oscillator);
     }
-
-    gainNode.connect(destination);
+    status.oscillators.push(...oscillators);
 
     gainNode.gain.setValueAtTime(0, context.currentTime); //avoid popping sound
     const maxLevel = config.maxGain / oscillators.length;
@@ -189,11 +190,8 @@ function startOscillators(
         );
     }
 
+    //only start the new oscillators
     oscillators.forEach((oscillator) => oscillator.start());
-    return {
-        gainNode,
-        oscillators,
-    };
 }
 
 function getFrequency(config: SynthesizerConfig, baseFreq: number, i: number) {
@@ -263,7 +261,7 @@ function getGain(config: SynthesizerConfig, i: number): number {
 function stopOscillators(
     config: SynthesizerConfig,
     context: AudioContext,
-    status: KeyStatus
+    status: NoteStatus
 ) {
     const endTime = context.currentTime + config.releaseSeconds;
     if (status.gainNode) {

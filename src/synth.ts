@@ -99,7 +99,6 @@ export function startSynthesizer(context = new AudioContext()): Synthesizer {
         },
         pedalPressed: (pedal: PedalType, value: number) => {
             if (pedal === 'sustain') {
-                console.log('sustain', value);
                 sustainPedalValue = value;
 
                 // when releasing the pedal, adjust gain of all active notes (where pressed = false)
@@ -149,40 +148,54 @@ function startOscillators(
     }
     const gainNode = status.gainNode;
 
-    const numOscillators =
-        config.overtoneType === 'drawbars' ? 9 : config.numOscillators;
     const oscillators: OscillatorNode[] = [];
-    for (let i = 0; i < numOscillators; i++) {
-        const gain = getGain(config, i);
-        if (gain === 0) {
-            continue;
-        }
-        const oscillator = context.createOscillator();
-        oscillator.type = config.oscillatorType;
-        oscillator.frequency.value = getFrequency(config, status.frequency, i);
+    if (status.oscillators.length === 0) {
+        const numOscillators =
+            config.overtoneType === 'drawbars' ? 9 : config.numOscillators;
+        for (let i = 0; i < numOscillators; i++) {
+            const gain = getGain(config, i);
+            if (gain === 0) {
+                continue;
+            }
+            const oscillator = context.createOscillator();
+            oscillator.type = config.oscillatorType;
+            oscillator.frequency.value = getFrequency(
+                config,
+                status.frequency,
+                i
+            );
 
-        if (config.detuneMultiplier !== 0) {
-            oscillator.detune.value = Math.sqrt(i) * config.detuneMultiplier;
-        }
+            if (config.detuneMultiplier !== 0) {
+                oscillator.detune.value =
+                    Math.sqrt(i) * config.detuneMultiplier;
+            }
 
-        if (gain !== 1) {
-            const overtoneGain = context.createGain();
-            overtoneGain.gain.value = gain;
+            if (gain !== 1) {
+                const overtoneGain = context.createGain();
+                overtoneGain.gain.value = gain;
 
-            oscillator.connect(overtoneGain).connect(gainNode);
-        } else {
-            oscillator.connect(gainNode);
+                oscillator.connect(overtoneGain).connect(gainNode);
+            } else {
+                oscillator.connect(gainNode);
+            }
+            oscillators.push(oscillator);
         }
-        oscillators.push(oscillator);
+        status.oscillators = oscillators;
+
+        // linearRampToValueAtTime() starts at _last_ event, so set initial value to avoid popping
+        gainNode.gain.setValueAtTime(0, context.currentTime);
+    } else {
+        gainNode.gain.cancelScheduledValues(0);
+
+        const currentGain = Math.max(gainNode.gain.value, silenceGain);
+        gainNode.gain.setValueAtTime(currentGain, context.currentTime);
     }
-    status.oscillators.push(...oscillators);
-
-    gainNode.gain.setValueAtTime(0, context.currentTime); //avoid popping sound
-    const maxLevel = config.maxGain / oscillators.length;
+    const maxLevel = config.maxGain / status.oscillators.length;
     gainNode.gain.linearRampToValueAtTime(
         maxLevel,
         context.currentTime + config.attackSeconds
     );
+
     if (config.sustainLevel < 1) {
         gainNode.gain.exponentialRampToValueAtTime(
             config.sustainLevel * maxLevel || silenceGain,

@@ -664,7 +664,7 @@ function addDebugHelpers(piano: PianoState) {
             lastProgramCount = programCount;
         }
     }
-    setInterval(logShaderRecompilations, 1000);
+    window.setInterval(logShaderRecompilations, 1000);
 
     const stats = new Stats();
     document.body.appendChild(stats.dom);

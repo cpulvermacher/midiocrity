@@ -51,7 +51,7 @@ const { status, sendKeyPress, sendKeyRelease } = startMIDI({
     },
 });
 
-setInterval(() => {
+window.setInterval(() => {
     Object.entries(status.activeInputChannels).forEach(
         ([id, value]) =>
             (document.getElementById(`channel-${id}`)!.className = value
@@ -88,7 +88,7 @@ window.addEventListener('keydown', function (event) {
             clearInterval(demoLoop);
             demoLoop = null;
         } else {
-            demoLoop = setInterval(() => {
+            demoLoop = window.setInterval(() => {
                 const pressedKey = lastDemoKey + 21;
                 piano.keyPressed(pressedKey, 0.5);
                 synth.keyPressed(pressedKey);

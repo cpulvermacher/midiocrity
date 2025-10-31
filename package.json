@@ -15,18 +15,18 @@
     "devDependencies": {
         "@types/stats.js": "^0.17.4",
         "@types/three": "^0.180.0",
-        "@typescript-eslint/eslint-plugin": "^8.44.0",
-        "@typescript-eslint/parser": "^8.44.0",
+        "@typescript-eslint/eslint-plugin": "^8.46.2",
+        "@typescript-eslint/parser": "^8.46.2",
         "eslint": "^8.57.0",
-        "happy-dom": "^18.0.1",
+        "happy-dom": "^20.0.10",
         "prettier": "^3.6.2",
         "stats.js": "^0.17.0",
-        "typescript": "^5.9.2",
-        "vite": "^7.1.6",
-        "vitest": "^3.2.4"
+        "typescript": "^5.9.3",
+        "vite": "^7.1.12",
+        "vitest": "^4.0.6"
     },
     "dependencies": {
-        "lil-gui": "^0.20.0",
-        "three": "^0.180.0"
+        "lil-gui": "^0.21.0",
+        "three": "^0.181.0"
     }
 }

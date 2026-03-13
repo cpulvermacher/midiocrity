@@ -3,8 +3,8 @@ import * as THREE from 'three';
 import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
 import { FontLoader } from 'three/addons/loaders/FontLoader.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { KeyMap, codeToCharMap } from './keyboard';
-import { PedalType } from './midi';
+import { codeToCharMap, type KeyMap } from './keyboard';
+import type { PedalType } from './midi';
 
 const pianoHeight = 8;
 const keyDistance = 1;
@@ -388,7 +388,7 @@ function animateLights(keys: Key[], timestampMs: number) {
         // fade out
         const exponent =
             (timestampMs - key.pressedTimestamp) / intensityHalfLifeMs;
-        const intensity = light.intensity * Math.pow(2, -exponent);
+        const intensity = light.intensity * 2 ** -exponent;
         light.color.getHSL(hsl);
         color.setHSL(hsl.h, 0.5, hsl.l);
         light.color.lerpHSL(color, 0.1);
@@ -559,7 +559,7 @@ function keyPressed(piano: PianoState, keyIndex: number, velocity: number) {
     color.setHSL(getCurrentHue(pressedTimestamp), 1.0, 0.5);
 
     key.light.visible = true;
-    key.light.intensity = Math.pow(100, velocity) - 1 + minIntensity;
+    key.light.intensity = 100 ** velocity - 1 + minIntensity;
     key.light.color = color;
 
     //TODO single mesh with emittance as texture?

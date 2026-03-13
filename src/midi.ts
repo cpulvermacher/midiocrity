@@ -44,13 +44,13 @@ export function startMIDI(args: StartMidiArgs) {
     return {
         status,
         sendKeyPress: (key: number) =>
-            access?.outputs.forEach((port) =>
-                port.send([0x90, key, 0.5 * 127])
-            ),
+            access?.outputs.forEach((port) => {
+                port.send([0x90, key, 0.5 * 127]);
+            }),
         sendKeyRelease: (key: number) =>
-            access?.outputs.forEach((port) =>
-                port.send([0x80, key, 0.5 * 127])
-            ),
+            access?.outputs.forEach((port) => {
+                port.send([0x80, key, 0.5 * 127]);
+            }),
     };
 }
 

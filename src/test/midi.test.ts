@@ -13,7 +13,7 @@ describe('startMIDI', () => {
     };
 
     beforeEach(() => {
-        navigator = { requestMIDIAccess: vi.fn() } as unknown as Navigator;
+        vi.stubGlobal('navigator', { requestMIDIAccess: vi.fn() });
     });
 
     afterEach(() => {

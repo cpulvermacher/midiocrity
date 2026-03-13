@@ -133,7 +133,7 @@ type NoteStatus = {
 export function keyToFrequency(key: number): number {
     const referenceFrequency = 440; // frequency of A4
     const referenceKey = 69; // key number of A4
-    return referenceFrequency * Math.pow(2, (key - referenceKey) / 12);
+    return referenceFrequency * 2 ** ((key - referenceKey) / 12);
 }
 
 function startOscillators(
@@ -204,14 +204,16 @@ function startOscillators(
     }
 
     //only start the new oscillators
-    oscillators.forEach((oscillator) => oscillator.start());
+    oscillators.forEach((oscillator) => {
+        oscillator.start();
+    });
 }
 
 function getFrequency(config: SynthesizerConfig, baseFreq: number, i: number) {
     if (config.overtoneType === 'harmonic') {
         return baseFreq * (i + 1);
     } else if (config.overtoneType === 'octaves') {
-        return baseFreq * Math.pow(2, i);
+        return baseFreq * 2 ** i;
     } else if (config.overtoneType === 'drawbars') {
         switch (i) {
             case 0: // sub-fundamental (16')
@@ -284,7 +286,9 @@ function stopOscillators(
         status.gainNode.gain.exponentialRampToValueAtTime(silenceGain, endTime);
         status.gainNode = null;
     }
-    status.oscillators.forEach((oscillator) => oscillator.stop(endTime));
+    status.oscillators.forEach((oscillator) => {
+        oscillator.stop(endTime);
+    });
     status.oscillators = [];
 }
 

@@ -52,12 +52,11 @@ const { status, sendKeyPress, sendKeyRelease } = startMIDI({
 });
 
 window.setInterval(() => {
-    Object.entries(status.activeInputChannels).forEach(
-        ([id, value]) =>
-            (document.getElementById(`channel-${id}`)!.className = value
-                ? 'dot-on'
-                : 'dot-off')
-    );
+    Object.entries(status.activeInputChannels).forEach(([id, value]) => {
+        document.getElementById(`channel-${id}`)!.className = value
+            ? 'dot-on'
+            : 'dot-off';
+    });
 
     const anyChannelActive = Object.values(status.activeInputChannels).some(
         (v) => v

@@ -72,10 +72,10 @@ body {
     font-size: 0.8em;
 }
 
-.btn-popup[hidden='true'] {
+.btn-popup[hidden="true"] {
     display: none;
 }
-.btn-popup[hidden='false'] {
+.btn-popup[hidden="false"] {
     display: block;
 }
 
@@ -105,14 +105,14 @@ body {
 }
 
 .menu-dot-on::before {
-    content: '•';
+    content: "•";
     color: #0f0;
     font-size: 1.5em;
     margin-right: 5px;
 }
 
 .menu-dot-off::before {
-    content: '◦';
+    content: "◦";
     color: #000;
     font-size: 1.5em;
     margin-right: 5px;

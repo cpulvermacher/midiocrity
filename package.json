@@ -8,18 +8,16 @@
         "dev": "vite",
         "build": "VITE_GIT_VERSION=$(git describe  --tags --long) vite build",
         "preview": "vite preview",
-        "lint": "eslint src --ext ts && tsc --noEmit && prettier src --check",
+        "lint": "biome check src && tsc --noEmit",
+        "format": "biome format --write src",
         "test": "vitest --run",
-        "checkall": "npm run test && npm run lint && npm run build"
+        "checkall": "pnpm test && pnpm lint && pnpm build"
     },
     "devDependencies": {
         "@types/stats.js": "^0.17.4",
         "@types/three": "^0.183.1",
-        "@typescript-eslint/eslint-plugin": "^8.46.2",
-        "@typescript-eslint/parser": "^8.46.2",
-        "eslint": "^8.57.0",
+        "@biomejs/biome": "^2.4.6",
         "happy-dom": "^20.0.11",
-        "prettier": "^3.7.4",
         "stats.js": "^0.17.0",
         "typescript": "^5.9.3",
         "vite": "^8.0.0",

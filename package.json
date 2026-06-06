@@ -16,7 +16,7 @@
     "devDependencies": {
         "@types/stats.js": "^0.17.4",
         "@types/three": "^0.184.0",
-        "@biomejs/biome": "^2.4.6",
+        "@biomejs/biome": "2.4.16",
         "happy-dom": "^20.9.0",
         "stats.js": "^0.17.0",
         "typescript": "^5.9.3",

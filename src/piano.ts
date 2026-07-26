@@ -547,7 +547,11 @@ function animateKeyFlow(
 }
 
 function keyPressed(piano: PianoState, keyIndex: number, velocity: number) {
-    if (keyIndex < 0 || keyIndex >= piano.config.numKeys) {
+    if (
+        !Number.isInteger(keyIndex) ||
+        keyIndex < 0 ||
+        keyIndex >= piano.config.numKeys
+    ) {
         console.error('Invalid key index', keyIndex);
         return;
     }
@@ -588,7 +592,11 @@ function keyPressed(piano: PianoState, keyIndex: number, velocity: number) {
 }
 
 function keyReleased(piano: PianoState, keyIndex: number) {
-    if (keyIndex < 0 || keyIndex >= piano.config.numKeys) {
+    if (
+        !Number.isInteger(keyIndex) ||
+        keyIndex < 0 ||
+        keyIndex >= piano.config.numKeys
+    ) {
         console.error('Invalid key index', keyIndex);
         return;
     }

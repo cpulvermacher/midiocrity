@@ -13,6 +13,7 @@ describe('startMIDI', () => {
     };
 
     beforeEach(() => {
+        vi.clearAllMocks();
         vi.stubGlobal('navigator', { requestMIDIAccess: vi.fn() });
     });
 
@@ -279,6 +280,44 @@ describe('startMIDI', () => {
                     );
                 }
             });
+        });
+
+        // truncated or out-of-range messages would otherwise reach piano.ts/synth.ts
+        // as `undefined` or an out-of-range note and crash them
+        const malformedMessages: { [name: string]: number[] } = {
+            'empty message': [],
+            'note on without note and velocity': [0x90],
+            'note on without velocity': [0x90, 60],
+            'note off without note and velocity': [0x80],
+            'note off without velocity': [0x80, 60],
+            'control change without controller and value': [0xb0],
+            'control change without value': [0xb0, 64],
+            'note on with out-of-range note': [0x90, 0xff, 100],
+            'note on with out-of-range velocity': [0x90, 60, 0xff],
+            'note off with out-of-range note': [0x80, 0xff, 100],
+            'control change with out-of-range controller': [0xb0, 0xff, 127],
+            'control change with out-of-range value': [0xb0, 64, 0xff],
+        };
+        Object.entries(malformedMessages).forEach(([name, data]) => {
+            it(`ignores ${name}`, () => {
+                midiInputs[0].onmidimessage!({
+                    data,
+                } as unknown as MIDIMessageEvent);
+
+                expect(args.onKeyPressed).not.toHaveBeenCalled();
+                expect(args.onKeyReleased).not.toHaveBeenCalled();
+                expect(args.onPedalPressed).not.toHaveBeenCalled();
+                expect(args.onPedalReleased).not.toHaveBeenCalled();
+            });
+        });
+
+        it('ignores a message without data', () => {
+            midiInputs[0].onmidimessage!({
+                data: null,
+            } as unknown as MIDIMessageEvent);
+
+            expect(args.onKeyPressed).not.toHaveBeenCalled();
+            expect(args.onKeyReleased).not.toHaveBeenCalled();
         });
     });
 });

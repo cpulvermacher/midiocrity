@@ -28,7 +28,7 @@ export function startMIDI(args: StartMidiArgs) {
     }
     let access: MIDIAccess | null = null;
 
-    if (navigator['requestMIDIAccess']) {
+    if (navigator.requestMIDIAccess) {
         navigator.requestMIDIAccess().then(
             (midiAccess) => {
                 onSuccess(midiAccess, args, status);
@@ -98,9 +98,24 @@ function processMessage(
     }
     // parse midi message, see
     // https://www.midi.org/specifications-old/item/table-1-summary-of-midi-message
-    const data = message.data as Uint8Array;
+    const data = message.data as Uint8Array | null;
+    if (!data || data.length === 0) {
+        return;
+    }
     const command = data[0] >> 4; //get first 4 bits
     const statusLowBits = data[0] & 0x0f; // get last 4 bits
+
+    // note on/off and control change are 3 bytes with 7-bit data bytes. Truncated or
+    // out-of-range messages would be passed on as `undefined` / an invalid note and
+    // crash the piano and synth, so drop them here.
+    const isThreeByteCommand = command === 8 || command === 9 || command === 11;
+    if (
+        isThreeByteCommand &&
+        (data.length < 3 || data[1] > 127 || data[2] > 127)
+    ) {
+        console.debug(`Ignoring malformed MIDI message: ${data}`);
+        return;
+    }
 
     if (command === 8 || command === 9) {
         // note off / note on

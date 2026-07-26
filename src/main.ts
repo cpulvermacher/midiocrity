@@ -3,12 +3,20 @@ import { createPiano } from './piano';
 import { createSettings } from './settings';
 import { startSynthesizer } from './synth';
 
+function getElement(id: string) {
+    const element = document.getElementById(id);
+    if (!element) {
+        throw new Error(`No element with id '${id}'`);
+    }
+    return element;
+}
+
 const piano = createPiano();
 const synth = startSynthesizer();
-const config = createSettings(document.getElementById('gui')!, synth, piano);
+const config = createSettings(getElement('gui'), synth, piano);
 
 const version = import.meta.env.VITE_GIT_VERSION ?? 'dev';
-document.getElementById('git-version')!.innerText = `Version: ${version}`;
+getElement('git-version').innerText = `Version: ${version}`;
 
 window.addEventListener('resize', piano.onWindowResize);
 piano.animate();
@@ -39,32 +47,30 @@ const { status, sendKeyPress, sendKeyRelease } = startMIDI({
         piano.pedalPressed(pedal, value / 128.0);
     },
     onInit: () => {
-        document.getElementById('loading')!.style.display = 'none';
+        getElement('loading').style.display = 'none';
     },
     onInitFailure: (reason) => {
-        document.getElementById('loading')!.style.display = 'none';
+        getElement('loading').style.display = 'none';
         if (reason === 'nopermissions') {
-            document.getElementById('no-permission')!.style.display = 'flex';
+            getElement('no-permission').style.display = 'flex';
         } else if (reason === 'unsupported') {
-            document.getElementById('no-webmidi')!.style.display = 'flex';
+            getElement('no-webmidi').style.display = 'flex';
         }
     },
 });
 
 window.setInterval(() => {
     Object.entries(status.activeInputChannels).forEach(([id, value]) => {
-        document.getElementById(`channel-${id}`)!.className = value
-            ? 'dot-on'
-            : 'dot-off';
+        getElement(`channel-${id}`).className = value ? 'dot-on' : 'dot-off';
     });
 
     const anyChannelActive = Object.values(status.activeInputChannels).some(
         (v) => v
     );
-    document.getElementById('midi-info-btn')!.className =
+    getElement('midi-info-btn').className =
         'btn menu-dot-' + (anyChannelActive ? 'on' : 'off');
 
-    const portList = document.getElementById('midi-ports')!;
+    const portList = getElement('midi-ports');
     portList.replaceChildren(
         ...status.connectedInputPorts.map((port) => {
             const listItem = document.createElement('li');

@@ -4,7 +4,6 @@
     "version": "0.4.0",
     "type": "module",
     "scripts": {
-        "preinstall": "npx only-allow pnpm",
         "dev": "vite",
         "build": "VITE_GIT_VERSION=$(git describe  --tags --long) vite build",
         "preview": "vite preview",

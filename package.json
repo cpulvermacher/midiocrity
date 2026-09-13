@@ -13,9 +13,9 @@
         "checkall": "pnpm test && pnpm lint && pnpm build"
     },
     "devDependencies": {
+        "@biomejs/biome": "2.4.16",
         "@types/stats.js": "^0.17.4",
         "@types/three": "^0.184.0",
-        "@biomejs/biome": "2.4.16",
         "happy-dom": "^20.9.0",
         "stats.js": "^0.17.0",
         "typescript": "^5.9.3",
@@ -26,5 +26,5 @@
         "lil-gui": "^0.21.0",
         "three": "^0.184.0"
     },
-    "packageManager": "pnpm@11.20.0+sha512.9a6f330a95b66446ea088faf1521405a8a01f07fde7124cc9958dfed52d4bb436737e65b08f85f37b46fcba375092558ac51262b816844b22f63406ed166bfee"
+    "packageManager": "pnpm@12.4.1"
 }
